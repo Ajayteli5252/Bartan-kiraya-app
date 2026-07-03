@@ -1,5 +1,5 @@
 // ============================================
-// inventory.js — Bartan Stock & Rate Management
+// inventory.js — Bartan Stock & Rate Management v4
 // ============================================
 
 async function loadInventoryPage() {
@@ -7,28 +7,49 @@ async function loadInventoryPage() {
   const container = document.getElementById('inventory-list');
 
   if (inventory.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🪣</div><p>Koi bartan nahi mila</p></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🪣</div><p>No bartan found</p></div>`;
     return;
   }
 
+  // Update global summary chips
+  const totalAll   = inventory.reduce((s, i) => s + (i.totalStock    || 0), 0);
+  const rentedAll  = inventory.reduce((s, i) => s + ((i.totalStock || 0) - (i.availableStock || 0)), 0);
+  const availAll   = inventory.reduce((s, i) => s + (i.availableStock || 0), 0);
+  const missingAll = inventory.reduce((s, i) => s + (i.missingCount  || 0), 0);
+
+  const el = (id) => document.getElementById(id);
+  if (el('inv-total-all'))   el('inv-total-all').textContent   = totalAll;
+  if (el('inv-rented-all'))  el('inv-rented-all').textContent  = rentedAll;
+  if (el('inv-avail-all'))   el('inv-avail-all').textContent   = availAll;
+  if (el('inv-missing-all')) el('inv-missing-all').textContent = missingAll;
+
   container.innerHTML = inventory.map(item => {
-    const stockColor = item.availableStock === 0
-      ? 'var(--danger)'
-      : item.availableStock < 5
-        ? 'var(--warning)'
-        : 'var(--success)';
+    const total   = item.totalStock    || 0;
+    const avail   = item.availableStock || 0;
+    const rented  = total - avail;
+    const missing = item.missingCount  || 0;
+
+    const availColor = avail === 0   ? 'var(--danger)'
+                     : avail < 5     ? 'var(--warning)'
+                     : 'var(--success)';
+
+    const missingChip = missing > 0
+      ? `<span class="inv-stock-chip inv-chip-missing">❌ Missing: ${missing}</span>`
+      : '';
 
     return `
       <div class="inv-item" id="inv-item-${item.id}">
-        <div style="flex:1;">
+        <div class="inv-item-top">
           <div class="inv-name">${item.name}</div>
-          <div class="inv-stock">
-            Stock: <span style="color:${stockColor};font-weight:700;">${item.availableStock}</span>
-            / ${item.totalStock} total
-          </div>
+          <div class="inv-rate">₹${item.ratePerDay}/day</div>
+          <button class="btn btn-outline btn-sm" onclick="openEditInventory(${item.id})">✏️ Edit</button>
         </div>
-        <div class="inv-rate">₹${item.ratePerDay}/din</div>
-        <button class="btn btn-outline btn-sm" onclick="openEditInventory(${item.id})">✏️ Edit</button>
+        <div class="inv-stock-bar">
+          <span class="inv-stock-chip inv-chip-total">📦 Total: ${total}</span>
+          <span class="inv-stock-chip inv-chip-rented">🔴 Rented: ${rented}</span>
+          <span class="inv-stock-chip inv-chip-avail" style="color:${availColor};">✅ Avail: ${avail}</span>
+          ${missingChip}
+        </div>
       </div>`;
   }).join('');
 }
@@ -40,7 +61,6 @@ async function openEditInventory(invId) {
   const item = await BartanDB.get(BartanDB.STORES.INVENTORY, invId);
   if (!item) return;
 
-  // Create modal dynamically
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay open';
   overlay.id = 'inv-modal';
@@ -50,21 +70,30 @@ async function openEditInventory(invId) {
       <div class="modal-title">✏️ ${item.name}</div>
 
       <div class="form-group">
-        <label class="form-label">Total Stock (Kitne hain aapke paas)</label>
+        <label class="form-label">Total Stock (How many you own)</label>
         <input type="number" class="form-control" id="inv-total-stock"
-          value="${item.totalStock}" min="0" placeholder="e.g. 20" />
+          value="${item.totalStock}" min="0" placeholder="e.g. 20" inputmode="numeric" />
       </div>
 
       <div class="form-group">
-        <label class="form-label">Available Stock (Abhi available)</label>
+        <label class="form-label">Available Stock (Ready to rent)</label>
         <input type="number" class="form-control" id="inv-avail-stock"
-          value="${item.availableStock}" min="0" placeholder="e.g. 20" />
+          value="${item.availableStock}" min="0" placeholder="e.g. 20" inputmode="numeric" />
       </div>
 
       <div class="form-group">
-        <label class="form-label">Rate Per Day (₹ per din per piece)</label>
+        <label class="form-label">Missing Count (Lost / Not returned)</label>
+        <input type="number" class="form-control" id="inv-missing-count"
+          value="${item.missingCount || 0}" min="0" placeholder="0" inputmode="numeric" />
+        <div style="font-size:0.72rem;color:var(--text-hint);margin-top:4px;">
+          Track bartan that customers never returned.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Rate Per Day (₹ per piece per day)</label>
         <input type="number" class="form-control" id="inv-rate"
-          value="${item.ratePerDay}" min="0" placeholder="e.g. 10" />
+          value="${item.ratePerDay}" min="0" placeholder="e.g. 10" inputmode="numeric" />
       </div>
 
       <div class="btn-row">
@@ -73,11 +102,9 @@ async function openEditInventory(invId) {
       </div>
     </div>`;
 
-  // Close on overlay click
-  overlay.addEventListener('click', (e) => {
+  overlay.addEventListener('click', e => {
     if (e.target === overlay) closeInvModal();
   });
-
   document.body.appendChild(overlay);
 }
 
@@ -89,21 +116,23 @@ function closeInvModal() {
 async function saveInventoryItem(invId) {
   const item = await BartanDB.get(BartanDB.STORES.INVENTORY, invId);
 
-  const totalStock = parseInt(document.getElementById('inv-total-stock').value) || 0;
-  const availableStock = parseInt(document.getElementById('inv-avail-stock').value) || 0;
-  const ratePerDay = parseFloat(document.getElementById('inv-rate').value) || 0;
+  const totalStock    = parseInt(document.getElementById('inv-total-stock').value)    || 0;
+  const availableStock= parseInt(document.getElementById('inv-avail-stock').value)    || 0;
+  const missingCount  = parseInt(document.getElementById('inv-missing-count').value)  || 0;
+  const ratePerDay    = parseFloat(document.getElementById('inv-rate').value)         || 0;
 
   if (availableStock > totalStock) {
-    showToast('⚠️ Available stock, total stock se zyada nahi ho sakta!');
+    showToast('⚠️ Available stock cannot exceed total stock!');
     return;
   }
 
-  item.totalStock = totalStock;
+  item.totalStock     = totalStock;
   item.availableStock = availableStock;
-  item.ratePerDay = ratePerDay;
+  item.missingCount   = missingCount;
+  item.ratePerDay     = ratePerDay;
 
   await BartanDB.put(BartanDB.STORES.INVENTORY, item);
   closeInvModal();
-  showToast('✅ Bartan update ho gaya!');
+  showToast('✅ Bartan updated!');
   await loadInventoryPage();
 }

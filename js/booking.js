@@ -99,5 +99,5 @@ async function deleteBooking(bookingId) {
   }
 
   await BartanDB.delete(BartanDB.STORES.BOOKINGS, bookingId);
-  showToast('🗑️ Booking delete ho gayi!');
+  showToast('🗑️ Booking deleted successfully!');
 }

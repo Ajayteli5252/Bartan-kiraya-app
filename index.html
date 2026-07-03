@@ -1,20 +1,30 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <meta name="theme-color" content="#E65100" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <title>शिवशक्ति बर्तन किराया</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <meta name="description" content="Shiv Shakti Bartan Kiraya — Utensil Rental Management App" />
+  <title>Shiv Shakti Bartan Kiraya</title>
+  <link rel="stylesheet" href="css/style.css?v=4" />
 </head>
 <body>
 
   <!-- ===== TOP HEADER ===== -->
   <header class="app-header">
-    <h1 id="pageTitle">🏠 Dashboard</h1>
-    <button class="header-icon" id="headerActionBtn" title="Action">＋</button>
+    <div class="header-left">
+      <div class="header-logo">🪣</div>
+      <div class="header-text">
+        <div id="appBusinessName">Shiv Shakti Bartan Kiraya</div>
+        <div class="header-sub">Admin Panel</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="header-icon" id="headerActionBtn" title="Alerts">⚠️</button>
+      <button class="header-icon" onclick="navigateTo('settings')" title="Settings">⚙️</button>
+    </div>
   </header>
 
   <!-- ===== PAGES ===== -->
@@ -22,48 +32,71 @@
   <!-- 1. DASHBOARD PAGE -->
   <div class="page active" id="page-dashboard">
 
-    <div class="stats-grid">
+    <!-- Stats Grid (6 cards) -->
+    <div class="stats-grid-3">
       <div class="stat-card">
-        <div class="stat-label">Active Bookings</div>
+        <div class="stat-icon">📋</div>
         <div class="stat-value" id="stat-active">0</div>
-        <div class="stat-sub">Abhi bahar hain</div>
+        <div class="stat-label">Active Bookings</div>
       </div>
       <div class="stat-card warning">
-        <div class="stat-label">Pending Payment</div>
+        <div class="stat-icon">💰</div>
         <div class="stat-value" id="stat-pending">₹0</div>
-        <div class="stat-sub">Baaki hai</div>
+        <div class="stat-label">Pending Payment</div>
       </div>
       <div class="stat-card success">
-        <div class="stat-label">This Month</div>
+        <div class="stat-icon">📈</div>
         <div class="stat-value" id="stat-month">₹0</div>
-        <div class="stat-sub">Income</div>
+        <div class="stat-label">This Month</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Total Customers</div>
+        <div class="stat-icon">👥</div>
         <div class="stat-value" id="stat-customers">0</div>
-        <div class="stat-sub">Registered</div>
+        <div class="stat-label">Customers</div>
+      </div>
+      <div class="stat-card info">
+        <div class="stat-icon">🪣</div>
+        <div class="stat-value" id="stat-total-bartan">0</div>
+        <div class="stat-label">Total Bartan</div>
+      </div>
+      <div class="stat-card danger">
+        <div class="stat-icon">🔴</div>
+        <div class="stat-value" id="stat-rented-out">0</div>
+        <div class="stat-label">Rented Out</div>
       </div>
     </div>
 
-    <!-- Active Bookings List -->
+    <!-- Inventory Summary -->
     <div class="section-header">
-      <span class="section-title">Active Bookings</span>
+      <span class="section-title">📦 Inventory Status</span>
+      <button class="section-link" onclick="navigateTo('inventory')">Manage →</button>
+    </div>
+    <div id="dashboard-inventory-summary">
+      <div class="empty-state" style="padding:20px;">
+        <div class="empty-icon">🪣</div>
+        <p>Loading inventory...</p>
+      </div>
+    </div>
+
+    <!-- Active Bookings -->
+    <div class="section-header" style="margin-top:12px;">
+      <span class="section-title">🔥 Active Bookings</span>
       <button class="section-link" onclick="navigateTo('bookings')">View All</button>
     </div>
     <div id="dashboard-bookings">
       <div class="empty-state">
         <div class="empty-icon">📦</div>
-        <p>Koi active booking nahi hai</p>
-        <button class="btn btn-primary btn-sm" onclick="navigateTo('new-booking')">+ Naya Booking</button>
+        <p>No active bookings</p>
+        <button class="btn btn-primary btn-sm" onclick="navigateTo('new-booking')">+ New Booking</button>
       </div>
     </div>
 
     <!-- Return Due Today -->
     <div class="section-header" style="margin-top:8px;">
-      <span class="section-title">⚠️ Aaj Wapas Aane Wale</span>
+      <span class="section-title">⚠️ Due Today / Overdue</span>
     </div>
     <div id="dashboard-due">
-      <p style="font-size:0.85rem; color:var(--text-hint); padding:8px 0;">Aaj koi return due nahi hai</p>
+      <p style="font-size:0.85rem; color:var(--text-hint); padding:8px 0;">✅ No returns due today</p>
     </div>
 
   </div>
@@ -73,22 +106,22 @@
 
     <div class="search-bar">
       <span class="search-icon">🔍</span>
-      <input type="text" id="bookingSearch" placeholder="Customer naam ya receipt no. search karein..." oninput="searchBookings(this.value)" />
+      <input type="text" id="bookingSearch" placeholder="Search by name or receipt no..." oninput="searchBookings(this.value)" />
     </div>
 
     <!-- Filter Tabs -->
     <div style="display:flex; gap:8px; margin-bottom:14px; overflow-x:auto; padding-bottom:4px;">
-      <button class="btn btn-primary btn-sm filter-btn" onclick="filterBookings('all', this)">Sab</button>
+      <button class="btn btn-primary btn-sm filter-btn" onclick="filterBookings('all', this)">All</button>
       <button class="btn btn-outline btn-sm filter-btn" onclick="filterBookings('active', this)">Active</button>
       <button class="btn btn-outline btn-sm filter-btn" onclick="filterBookings('overdue', this)">⚠️ Overdue</button>
       <button class="btn btn-outline btn-sm filter-btn" onclick="filterBookings('returned', this)">Returned</button>
-      <button class="btn btn-outline btn-sm filter-btn" onclick="filterBookings('pending', this)">Pending</button>
+      <button class="btn btn-outline btn-sm filter-btn" onclick="filterBookings('pending', this)">Pending ₹</button>
     </div>
 
     <div id="bookings-list">
       <div class="empty-state">
         <div class="empty-icon">📋</div>
-        <p>Koi booking nahi mili</p>
+        <p>No bookings found</p>
       </div>
     </div>
 
@@ -98,49 +131,49 @@
   <div class="page" id="page-new-booking">
 
     <div class="card">
-      <div class="card-title">Customer Details</div>
+      <div class="card-title">👤 Customer Details</div>
 
       <div class="form-group">
         <label class="form-label">Mobile Number *</label>
         <input type="tel" class="form-control" id="nb-mobile" maxlength="10"
-          placeholder="Mobile number dalein" oninput="autofillCustomer(this.value)" />
+          placeholder="Enter mobile number" oninput="autofillCustomer(this.value)" inputmode="numeric" />
       </div>
       <div class="form-group">
-        <label class="form-label">Shreemaan (Naam) *</label>
-        <input type="text" class="form-control" id="nb-name" placeholder="Customer ka naam" />
+        <label class="form-label">Customer Name *</label>
+        <input type="text" class="form-control" id="nb-name" placeholder="Customer full name" />
       </div>
       <div class="form-group">
-        <label class="form-label">Pita Ka Naam</label>
-        <input type="text" class="form-control" id="nb-father" placeholder="Pita ka naam" />
+        <label class="form-label">Father's Name</label>
+        <input type="text" class="form-control" id="nb-father" placeholder="Father's name" />
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">Booking Details</div>
+      <div class="card-title">📅 Booking Details</div>
       <div class="form-group">
         <label class="form-label">Booking Date & Time *</label>
         <input type="datetime-local" class="form-control" id="nb-booking-dt" />
       </div>
       <div class="form-group">
-        <label class="form-label">Wapsi Date *</label>
+        <label class="form-label">Return Date *</label>
         <input type="date" class="form-control" id="nb-return-dt" />
       </div>
       <div class="total-row" style="margin-bottom:0;">
         <span class="total-label">📅 Total Days</span>
-        <span class="total-value" id="nb-days">0 din</span>
+        <span class="total-value" id="nb-days">0 days</span>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">Bartan Select Karein</div>
+      <div class="card-title">🪣 Select Bartan</div>
       <div style="overflow-x:auto;">
         <table class="bartan-table">
           <thead>
             <tr>
               <th>Bartan</th>
-              <th>Nag</th>
-              <th>Dar/Din</th>
-              <th>Rakam</th>
+              <th>Qty</th>
+              <th>Rate/Day</th>
+              <th>Amount</th>
             </tr>
           </thead>
           <tbody id="nb-bartan-rows">
@@ -149,16 +182,16 @@
         </table>
       </div>
       <div class="total-row">
-        <span class="total-label">Total Rakam</span>
+        <span class="total-label">Total Amount</span>
         <span class="total-value" id="nb-total">₹0</span>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">Payment</div>
+      <div class="card-title">💰 Payment</div>
       <div class="form-group">
         <label class="form-label">Advance / Deposit (₹)</label>
-        <input type="number" class="form-control" id="nb-advance" placeholder="0" oninput="updatePending()" />
+        <input type="number" class="form-control" id="nb-advance" placeholder="0" oninput="updatePending()" inputmode="numeric" />
       </div>
       <div class="form-group">
         <label class="form-label">Payment Mode</label>
@@ -169,10 +202,10 @@
       </div>
       <div class="form-group">
         <label class="form-label">Notes (Optional)</label>
-        <input type="text" class="form-control" id="nb-notes" placeholder="Koi special note..." />
+        <input type="text" class="form-control" id="nb-notes" placeholder="Any special note..." />
       </div>
       <div class="total-row">
-        <span class="total-label">Baaki (Pending)</span>
+        <span class="total-label">Pending Balance</span>
         <span class="total-value" id="nb-pending" style="color:var(--danger);">₹0</span>
       </div>
     </div>
@@ -194,14 +227,31 @@
   <!-- 5. INVENTORY PAGE -->
   <div class="page" id="page-inventory">
 
-    <div class="card" style="background:var(--surface-2); border-color:var(--accent-dark);">
-      <p style="font-size:0.82rem; color:var(--text-secondary);">
-        💡 Har bartan ka <b>Total Stock</b> aur <b>Rate per Day</b> set karein.
-        Available stock booking ke time auto-update hoga.
-      </p>
+    <div class="inv-info-banner">
+      <span>💡</span>
+      <span>Set <b>Total Stock</b> and <b>Rate per Day</b> for each bartan. Available stock updates automatically when bartan is booked or returned.</span>
     </div>
 
     <div class="card">
+      <!-- Inventory summary row -->
+      <div class="inv-summary-row">
+        <div class="inv-sum-cell">
+          <div class="inv-sum-val" id="inv-total-all">0</div>
+          <div class="inv-sum-lbl">Total Pieces</div>
+        </div>
+        <div class="inv-sum-cell warning">
+          <div class="inv-sum-val" id="inv-rented-all">0</div>
+          <div class="inv-sum-lbl">Rented Out</div>
+        </div>
+        <div class="inv-sum-cell success">
+          <div class="inv-sum-val" id="inv-avail-all">0</div>
+          <div class="inv-sum-lbl">Available</div>
+        </div>
+        <div class="inv-sum-cell danger">
+          <div class="inv-sum-val" id="inv-missing-all">0</div>
+          <div class="inv-sum-lbl">Missing</div>
+        </div>
+      </div>
       <div id="inventory-list">
         <!-- Filled by JS -->
       </div>
@@ -214,14 +264,14 @@
 
     <div class="search-bar">
       <span class="search-icon">🔍</span>
-      <input type="text" id="customerSearch" placeholder="Naam ya mobile search karein..."
+      <input type="text" id="customerSearch" placeholder="Search by name or mobile..."
         oninput="searchCustomers(this.value)" />
     </div>
 
     <div id="customers-list">
       <div class="empty-state">
         <div class="empty-icon">👥</div>
-        <p>Koi customer nahi mila</p>
+        <p>No customers found</p>
       </div>
     </div>
 
@@ -238,7 +288,7 @@
   <div class="page" id="page-report">
 
     <div class="card no-print">
-      <div class="card-title">Report Filter</div>
+      <div class="card-title">📊 Report Filter</div>
       <div class="form-group">
         <label class="form-label">Year</label>
         <select class="form-control" id="report-year" onchange="loadReport()">
@@ -248,7 +298,7 @@
       <div class="form-group">
         <label class="form-label">Month (Optional)</label>
         <select class="form-control" id="report-month" onchange="loadReport()">
-          <option value="">Poora Saal</option>
+          <option value="">Full Year</option>
           <option value="0">January</option>
           <option value="1">February</option>
           <option value="2">March</option>
@@ -265,13 +315,78 @@
       </div>
     </div>
 
-    <!-- Report Output -->
     <div id="report-output">
       <!-- Filled by JS -->
     </div>
 
     <div class="btn-row no-print" style="margin-bottom:16px;">
       <button class="btn btn-outline" onclick="window.print()">🖨️ Print Report</button>
+    </div>
+
+  </div>
+
+  <!-- 8. SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+
+    <div class="card">
+      <div class="card-title">🏪 Business Information</div>
+      <div class="form-group">
+        <label class="form-label">Business Name</label>
+        <input type="text" class="form-control" id="set-business-name" placeholder="e.g. Shiv Shakti Bartan Kiraya" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Owner / Contact Name</label>
+        <input type="text" class="form-control" id="set-owner-name" placeholder="e.g. Ramesh Teli" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Business Phone (for WhatsApp messages)</label>
+        <input type="tel" class="form-control" id="set-phone" placeholder="10-digit number" maxlength="10" inputmode="numeric" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Address</label>
+        <input type="text" class="form-control" id="set-address" placeholder="Village / City, District" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚠️ Penalty Settings</div>
+      <div class="form-group">
+        <label class="form-label">Default Overdue Penalty — % of Daily Rate per Extra Day</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="number" class="form-control" id="set-penalty-pct" placeholder="e.g. 100" min="0" max="500" inputmode="numeric" style="flex:1;" />
+          <span style="font-size:0.9rem;color:var(--text-secondary);white-space:nowrap;">% of daily rate</span>
+        </div>
+        <div style="font-size:0.75rem;color:var(--text-hint);margin-top:4px;">
+          100% means penalty = 1× daily rate per extra day. 200% = 2× rate.
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Damage Penalty Default (₹ per item)</label>
+        <input type="number" class="form-control" id="set-damage-penalty" placeholder="e.g. 500" min="0" inputmode="numeric" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Missing Penalty Default (₹ per item)</label>
+        <input type="number" class="form-control" id="set-missing-penalty" placeholder="e.g. 1000" min="0" inputmode="numeric" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">💬 WhatsApp Message</div>
+      <div class="form-group">
+        <label class="form-label">Custom Footer Message</label>
+        <input type="text" class="form-control" id="set-wa-footer"
+          placeholder="e.g. Thank you for choosing us! 🙏" />
+        <div style="font-size:0.75rem;color:var(--text-hint);margin-top:4px;">
+          This will appear at the bottom of all WhatsApp messages.
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-bottom:8px;">
+      <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+    </div>
+    <div class="btn-row" style="margin-bottom:16px;">
+      <button class="btn btn-outline" onclick="navigateTo('dashboard')">← Back to Dashboard</button>
     </div>
 
   </div>
@@ -301,19 +416,19 @@
   </nav>
 
   <!-- ===== FAB Button ===== -->
-  <button class="fab" id="fabBtn" onclick="navigateTo('new-booking')" title="Naya Booking">＋</button>
+  <button class="fab" id="fabBtn" onclick="navigateTo('new-booking')" title="New Booking">＋</button>
 
   <!-- ===== TOAST ===== -->
   <div class="toast" id="toast"></div>
 
   <!-- ===== SCRIPTS ===== -->
-  <script src="js/db.js?v=3"></script>
-  <script src="js/inventory.js?v=3"></script>
-  <script src="js/booking.js?v=3"></script>
-  <script src="js/payment.js?v=3"></script>
-  <script src="js/report.js?v=3"></script>
-  <script src="js/reminder.js?v=3"></script>
-  <script src="js/app.js?v=3"></script>
+  <script src="js/db.js?v=4"></script>
+  <script src="js/inventory.js?v=4"></script>
+  <script src="js/booking.js?v=4"></script>
+  <script src="js/payment.js?v=4"></script>
+  <script src="js/report.js?v=4"></script>
+  <script src="js/reminder.js?v=4"></script>
+  <script src="js/app.js?v=4"></script>
 
 </body>
 </html>

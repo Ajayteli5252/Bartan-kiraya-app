@@ -1,5 +1,5 @@
 /* ============================================
-   style.css — Bartan Kiraya App
+   style.css — Bartan Kiraya App v4
    Mobile-first, Android app feel
    ============================================ */
 
@@ -8,10 +8,10 @@
 
 /* --- CSS Variables --- */
 :root {
-  --primary:        #E65100;   /* deep orange — mitti ka rang */
+  --primary:        #E65100;
   --primary-light:  #FF8A50;
   --primary-dark:   #BF360C;
-  --accent:         #FFD600;   /* yellow — slip ka rang */
+  --accent:         #FFD600;
   --accent-dark:    #F9A825;
   --bg:             #FFF8F5;
   --surface:        #FFFFFF;
@@ -25,6 +25,8 @@
   --danger-light:   #FFEBEE;
   --warning:        #F57F17;
   --warning-light:  #FFFDE7;
+  --info:           #1565C0;
+  --info-light:     #E3F2FD;
   --border:         #FFE0B2;
   --shadow:         0 2px 12px rgba(230,81,0,0.10);
   --shadow-lg:      0 8px 32px rgba(230,81,0,0.15);
@@ -32,7 +34,7 @@
   --radius-sm:      8px;
   --radius-lg:      20px;
   --nav-height:     64px;
-  --header-height:  56px;
+  --header-height:  64px;
 }
 
 /* --- Reset --- */
@@ -56,31 +58,62 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   height: var(--header-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.20);
+  padding: 0 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
 }
-.app-header h1 {
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.header-logo {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+.header-text {
+  min-width: 0;
+}
+.header-text > div:first-child {
   color: #fff;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 800;
   letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.app-header .header-icon {
+.header-sub {
+  color: rgba(255,255,255,0.75);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.header-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.header-icon {
   width: 36px; height: 36px;
   background: rgba(255,255,255,0.15);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   cursor: pointer;
   border: none;
   color: #fff;
   position: relative;
+  transition: background 0.2s;
 }
+.header-icon:active { background: rgba(255,255,255,0.30); }
 .header-badge {
   position: absolute;
   top: -4px; right: -4px;
@@ -118,7 +151,7 @@ body {
   align-items: center;
   gap: 2px;
   cursor: pointer;
-  padding: 6px 12px;
+  padding: 6px 8px;
   border-radius: var(--radius-sm);
   transition: all 0.2s;
   border: none;
@@ -132,17 +165,17 @@ body {
   width: 38px; height: 38px;
   border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   transition: background 0.2s;
 }
-.nav-label { font-size: 0.65rem; font-weight: 600; }
+.nav-label { font-size: 0.62rem; font-weight: 600; }
 
 /* ============================================
    PAGE WRAPPER
    ============================================ */
 .page {
   display: none;
-  padding: 16px;
+  padding: 14px;
   animation: fadeIn 0.25s ease;
 }
 .page.active { display: block; }
@@ -158,56 +191,102 @@ body {
 .card {
   background: var(--surface);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 14px;
   box-shadow: var(--shadow);
   margin-bottom: 12px;
   border: 1px solid var(--border);
 }
 .card-title {
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 /* ============================================
-   DASHBOARD STATS
+   DASHBOARD STATS — 3 column grid
    ============================================ */
-.stats-grid {
+.stats-grid-3 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
   margin-bottom: 14px;
 }
 .stat-card {
   background: var(--surface);
   border-radius: var(--radius);
-  padding: 14px;
+  padding: 12px 8px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
 }
-.stat-card .stat-label {
-  font-size: 0.72rem;
-  color: var(--text-secondary);
-  font-weight: 600;
-  margin-bottom: 4px;
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--primary);
+  border-radius: var(--radius) var(--radius) 0 0;
 }
+.stat-card.warning::before { background: var(--warning); }
+.stat-card.success::before { background: var(--success); }
+.stat-card.danger::before  { background: var(--danger); }
+.stat-card.info::before    { background: var(--info); }
+
+.stat-icon { font-size: 1.2rem; margin-bottom: 2px; }
 .stat-card .stat-value {
-  font-size: 1.6rem;
+  font-size: 1.3rem;
   font-weight: 800;
   color: var(--primary);
-  line-height: 1;
+  line-height: 1.1;
 }
-.stat-card .stat-sub {
-  font-size: 0.7rem;
-  color: var(--text-hint);
+.stat-card .stat-label {
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  font-weight: 600;
   margin-top: 2px;
+  line-height: 1.2;
 }
 .stat-card.warning .stat-value { color: var(--warning); }
 .stat-card.success .stat-value { color: var(--success); }
 .stat-card.danger  .stat-value { color: var(--danger); }
+.stat-card.info    .stat-value { color: var(--info); }
+
+/* ============================================
+   DASHBOARD INVENTORY SUMMARY TABLE
+   ============================================ */
+.inv-dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.inv-dash-table thead tr {
+  background: var(--surface-2);
+}
+.inv-dash-table th {
+  padding: 8px 6px;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.inv-dash-table th:not(:first-child) { text-align: center; }
+.inv-dash-table td {
+  padding: 7px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.inv-dash-table td:not(:first-child) { text-align: center; font-weight: 700; }
+.inv-dash-table tr:last-child td { border-bottom: none; }
+.inv-dash-table .inv-name-cell {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  max-width: 120px;
+}
 
 /* ============================================
    SECTION HEADER
@@ -220,7 +299,7 @@ body {
   margin-top: 4px;
 }
 .section-title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -245,9 +324,9 @@ body {
   box-shadow: var(--shadow);
   margin-bottom: 10px;
   cursor: pointer;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, transform 0.1s;
 }
-.booking-item:active { box-shadow: var(--shadow-lg); }
+.booking-item:active { box-shadow: var(--shadow-lg); transform: scale(0.99); }
 .booking-item .b-top {
   display: flex;
   justify-content: space-between;
@@ -292,7 +371,7 @@ body {
   display: inline-block;
   padding: 3px 10px;
   border-radius: 20px;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.3px;
 }
@@ -302,7 +381,6 @@ body {
 .badge-paid    { background: var(--success-light); color: var(--success); }
 .badge-overdue { background: var(--danger-light); color: var(--danger); border: 1px solid var(--danger); }
 
-/* Overdue booking highlight */
 .overdue-item {
   border-left: 3px solid var(--danger) !important;
   background: #FFF5F5 !important;
@@ -335,7 +413,6 @@ body {
 }
 .form-control:focus { border-color: var(--primary); }
 .form-control::placeholder { color: var(--text-hint); }
-
 select.form-control { appearance: none; cursor: pointer; }
 
 /* ============================================
@@ -391,6 +468,12 @@ select.form-control { appearance: none; cursor: pointer; }
   box-shadow: 0 3px 10px rgba(37,211,102,0.30);
 }
 
+.btn-print {
+  background: var(--info);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(21,101,192,0.25);
+}
+
 .btn-sm {
   padding: 8px 14px;
   font-size: 0.82rem;
@@ -418,7 +501,7 @@ select.form-control { appearance: none; cursor: pointer; }
   padding: 8px 6px;
   text-align: left;
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
 }
 .bartan-table td {
   padding: 8px 6px;
@@ -442,34 +525,95 @@ select.form-control { appearance: none; cursor: pointer; }
 }
 
 /* ============================================
-   INVENTORY ITEM
+   INVENTORY PAGE
    ============================================ */
-.inv-item {
+.inv-info-banner {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  gap: 8px;
+  align-items: flex-start;
+  background: var(--info-light);
+  border: 1px solid #BBDEFB;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  color: var(--info);
+  margin-bottom: 12px;
+}
+
+/* Inventory summary total row */
+.inv-summary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.inv-sum-cell {
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.inv-sum-cell.warning { background: var(--warning-light); }
+.inv-sum-cell.success { background: var(--success-light); }
+.inv-sum-cell.danger  { background: var(--danger-light); }
+.inv-sum-val {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--primary);
+}
+.inv-sum-cell.warning .inv-sum-val { color: var(--warning); }
+.inv-sum-cell.success .inv-sum-val { color: var(--success); }
+.inv-sum-cell.danger  .inv-sum-val { color: var(--danger); }
+.inv-sum-lbl {
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Inventory item row */
+.inv-item {
   padding: 12px 0;
   border-bottom: 1px solid var(--border);
 }
 .inv-item:last-child { border-bottom: none; }
-.inv-name {
-  font-size: 0.9rem;
-  font-weight: 600;
-  flex: 1;
+.inv-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
 }
-.inv-stock {
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  margin-top: 2px;
+.inv-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  flex: 1;
 }
 .inv-rate {
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--primary);
   margin-right: 10px;
-  min-width: 60px;
-  text-align: right;
 }
+.inv-stock-bar {
+  display: flex;
+  gap: 6px;
+}
+.inv-stock-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.inv-chip-total   { background: var(--surface-2); color: var(--text-secondary); }
+.inv-chip-rented  { background: var(--warning-light); color: var(--warning); }
+.inv-chip-avail   { background: var(--success-light); color: var(--success); }
+.inv-chip-missing { background: var(--danger-light); color: var(--danger); }
 
 /* ============================================
    TOTAL ROW
@@ -478,24 +622,24 @@ select.form-control { appearance: none; cursor: pointer; }
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 16px;
+  padding: 12px 14px;
   background: var(--surface-2);
   border-radius: var(--radius-sm);
   margin-top: 8px;
   border: 1px solid var(--border);
 }
 .total-label { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); }
-.total-value { font-size: 1.3rem; font-weight: 800; color: var(--primary); }
+.total-value { font-size: 1.2rem; font-weight: 800; color: var(--primary); }
 
 /* ============================================
    EMPTY STATE
    ============================================ */
 .empty-state {
   text-align: center;
-  padding: 48px 20px;
+  padding: 40px 20px;
   color: var(--text-hint);
 }
-.empty-state .empty-icon { font-size: 3.5rem; margin-bottom: 12px; }
+.empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
 .empty-state p { font-size: 0.9rem; margin-bottom: 16px; }
 
 /* ============================================
@@ -525,7 +669,7 @@ select.form-control { appearance: none; cursor: pointer; }
 }
 
 /* ============================================
-   FAB (Floating Action Button)
+   FAB
    ============================================ */
 .fab {
   position: fixed;
@@ -586,6 +730,56 @@ select.form-control { appearance: none; cursor: pointer; }
 }
 
 /* ============================================
+   PRINT BILL STYLES
+   ============================================ */
+.print-bill-sheet {
+  background: #fff;
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+}
+.print-bill-header {
+  text-align: center;
+  border-bottom: 2px dashed #aaa;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+.print-bill-title {
+  font-size: 1rem;
+  font-weight: 800;
+}
+.print-bill-sub {
+  font-size: 0.72rem;
+  color: #555;
+}
+.print-bill-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  border-bottom: 1px dotted #eee;
+  font-size: 0.8rem;
+}
+.print-bill-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0 4px;
+  font-weight: 800;
+  font-size: 1rem;
+  border-top: 2px solid #333;
+  margin-top: 6px;
+}
+.print-bill-footer {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 0.72rem;
+  color: #666;
+  border-top: 1px dashed #aaa;
+  padding-top: 8px;
+}
+
+/* ============================================
    REPORT PRINT STYLES
    ============================================ */
 @media print {
@@ -593,6 +787,8 @@ select.form-control { appearance: none; cursor: pointer; }
   body { background: #fff; max-width: 100%; padding: 0; }
   .card { box-shadow: none; border: 1px solid #ddd; }
   .page { display: block !important; }
+  .page:not(.active) { display: none !important; }
+  .page.active { display: block !important; }
 }
 
 /* ============================================
@@ -762,7 +958,7 @@ select.form-control { appearance: none; cursor: pointer; }
 }
 
 /* ============================================
-   PENALTY & RETURN MODAL STYLES
+   PENALTY & RETURN MODAL
    ============================================ */
 .penalty-detail-card {
   border: 1.5px solid var(--danger);
@@ -778,20 +974,10 @@ select.form-control { appearance: none; cursor: pointer; }
   margin-left: 6px;
   text-transform: uppercase;
 }
-.penalty-damaged {
-  background: #FFCDD2;
-  color: var(--danger);
-}
-.penalty-missing {
-  background: #FFE0B2;
-  color: var(--primary-dark);
-}
-.penalty-overdue {
-  background: #E1BEE7;
-  color: #4A148C;
-}
+.penalty-damaged  { background: #FFCDD2; color: var(--danger); }
+.penalty-missing  { background: #FFE0B2; color: var(--primary-dark); }
+.penalty-overdue  { background: #E1BEE7; color: #4A148C; }
 
-/* Return Modal */
 .return-modal-sheet {
   max-height: 85vh;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
@@ -839,13 +1025,8 @@ select.form-control { appearance: none; cursor: pointer; }
   padding: 10px 0;
   border-bottom: 1px solid rgba(230,81,0,0.1);
 }
-.ret-item-row:last-child {
-  border-bottom: none;
-}
-.ret-item-info {
-  flex: 1;
-  padding-right: 12px;
-}
+.ret-item-row:last-child { border-bottom: none; }
+.ret-item-info { flex: 1; padding-right: 12px; }
 .ret-item-name {
   font-size: 0.9rem;
   font-weight: 700;
@@ -874,12 +1055,7 @@ select.form-control { appearance: none; cursor: pointer; }
   outline: none;
   font-weight: 600;
 }
-.ret-status-select:focus {
-  border-color: var(--primary);
-}
-.ret-penalty-box {
-  animation: fadeIn 0.2s ease;
-}
+.ret-penalty-box { animation: fadeIn 0.2s ease; }
 .ret-penalty-input {
   width: 90px !important;
   padding: 5px 8px !important;
@@ -888,11 +1064,6 @@ select.form-control { appearance: none; cursor: pointer; }
   border: 1.5px solid var(--danger) !important;
   text-align: right !important;
 }
-.ret-penalty-input:focus {
-  border-color: var(--danger-dark) !important;
-}
-
-/* Overdue Section */
 .ret-overdue-section {
   background: var(--danger-light);
   border: 1.5px solid var(--danger);
@@ -925,8 +1096,6 @@ select.form-control { appearance: none; cursor: pointer; }
   border-radius: 6px;
   border-left: 3px solid var(--danger);
 }
-
-/* Grand Total Bar */
 .ret-total-bar {
   display: flex;
   justify-content: space-between;
@@ -942,4 +1111,16 @@ select.form-control { appearance: none; cursor: pointer; }
 .ret-total-val {
   font-size: 1.25rem;
   font-weight: 800;
-}
+}
+
+/* ============================================
+   SETTINGS PAGE
+   ============================================ */
+.settings-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-hint);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 8px 0 6px;
+}
