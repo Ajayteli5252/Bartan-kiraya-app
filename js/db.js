@@ -3,7 +3,7 @@
 // ============================================
 
 const DB_NAME    = "BartanKirayaDB";
-const DB_VERSION = 2;          // bumped to 2 → triggers onupgradeneeded for new SETTINGS store
+const DB_VERSION = 3;          // bumped to 3 → triggers onupgradeneeded for SARAI_BOOKINGS store
 
 const STORES = {
   CUSTOMERS:  "customers",
@@ -11,6 +11,7 @@ const STORES = {
   INVENTORY:  "inventory",
   PAYMENTS:   "payments",
   SETTINGS:   "settings",
+  SARAI_BOOKINGS: "sarai_bookings",
 };
 
 let db = null;
@@ -59,11 +60,20 @@ function initDB() {
       if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
         db.createObjectStore(STORES.SETTINGS, { keyPath: "key" });
       }
+
+      // --- SARAI BOOKINGS (new in v3) ---
+      if (!db.objectStoreNames.contains(STORES.SARAI_BOOKINGS)) {
+        const s = db.createObjectStore(STORES.SARAI_BOOKINGS, { keyPath: "id", autoIncrement: true });
+        s.createIndex("customerId", "customerId", { unique: false });
+        s.createIndex("fromDate",   "fromDate",   { unique: false });
+        s.createIndex("toDate",     "toDate",     { unique: false });
+        s.createIndex("status",     "status",     { unique: false }); // 'active', 'completed', 'cancelled'
+      }
     };
 
     request.onsuccess = (event) => {
       db = event.target.result;
-      console.log("✅ Database initialized (v2)");
+      console.log("✅ Database initialized (v3)");
       seedInventory();
       resolve(db);
     };

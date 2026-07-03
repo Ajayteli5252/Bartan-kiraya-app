@@ -32,6 +32,10 @@
   <!-- 1. DASHBOARD PAGE -->
   <div class="page active" id="page-dashboard">
 
+    <div style="margin-bottom: 14px;">
+      <button class="btn btn-primary" onclick="navigateTo('new-booking')" style="width: 100%; font-size: 1.1rem; padding: 14px; box-shadow: var(--shadow-lg);">➕ Create New Booking</button>
+    </div>
+
     <!-- Stats Grid (6 cards) -->
     <div class="stats-grid-3">
       <div class="stat-card">
@@ -95,8 +99,17 @@
     <div class="section-header" style="margin-top:8px;">
       <span class="section-title">⚠️ Due Today / Overdue</span>
     </div>
+    </div>
     <div id="dashboard-due">
       <p style="font-size:0.85rem; color:var(--text-hint); padding:8px 0;">✅ No returns due today</p>
+    </div>
+
+    <!-- Sarai Status (New) -->
+    <div class="section-header" style="margin-top:16px;">
+      <span class="section-title">🏰 Sarai Booking Status</span>
+    </div>
+    <div id="dashboard-sarai-status" style="margin-bottom:12px;">
+      <div style="background:#f5f5f5;padding:12px;border-radius:6px;font-size:0.85rem;text-align:center;">Loading...</div>
     </div>
 
   </div>
@@ -391,6 +404,90 @@
 
   </div>
 
+  <!-- ============================================ -->
+  <!-- SARAI MODULE PAGES -->
+  <!-- ============================================ -->
+
+  <!-- 8. SARAI PAGE (LIST) -->
+  <div class="page" id="page-sarai">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h2 style="margin:0;">🏰 Sarai Bookings</h2>
+      <button class="btn btn-primary btn-sm" onclick="startNewSaraiBooking()" style="width:auto;flex:0;">+ Book</button>
+    </div>
+    <div id="sarai-bookings-list">
+      <div class="empty-state"><p>Loading...</p></div>
+    </div>
+  </div>
+
+  <!-- 9. NEW SARAI BOOKING -->
+  <div class="page" id="page-new-sarai-booking">
+    <div class="card">
+      <div class="card-title">👤 Customer Details</div>
+      <div class="form-group">
+        <label class="form-label">Mobile Number</label>
+        <input type="tel" class="form-control" id="sarai-mobile" list="sarai-customer-list" oninput="saraiMobileChanged(this.value)" placeholder="10-digit number" />
+        <datalist id="sarai-customer-list"></datalist>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input type="text" class="form-control" id="sarai-name" placeholder="Enter name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Father's Name (Optional)</label>
+        <input type="text" class="form-control" id="sarai-father" placeholder="Enter father's name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Address (Optional)</label>
+        <input type="text" class="form-control" id="sarai-address" placeholder="Village / Area" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📅 Booking Details</div>
+      <div style="display:flex;gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">From Date</label>
+          <input type="date" class="form-control" id="sarai-from-dt" onchange="calculateSaraiTotal()" />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">To Date</label>
+          <input type="date" class="form-control" id="sarai-to-dt" onchange="calculateSaraiTotal()" />
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Rate / Day</label>
+          <input type="number" class="form-control" id="sarai-rate" value="1100" onchange="calculateSaraiTotal()" />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Advance (₹)</label>
+          <input type="number" class="form-control" id="sarai-advance" value="0" />
+        </div>
+      </div>
+      
+      <div class="total-row" style="margin-top:10px;">
+        <span class="total-label">Estimated Rent:</span>
+        <span class="total-value" id="sarai-total-calc">₹0</span>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-title">📝 Notes (Optional)</div>
+      <textarea class="form-control" id="sarai-notes" placeholder="Any special requests..."></textarea>
+    </div>
+
+    <div class="btn-row" style="margin-top:20px;">
+      <button class="btn btn-outline" onclick="navigateTo('sarai')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSaraiBooking()">💾 Confirm Booking</button>
+    </div>
+    <div style="height:32px;"></div>
+  </div>
+
+  <!-- 10. SARAI DETAIL PAGE -->
+  <div class="page" id="page-sarai-detail">
+    <div id="sarai-detail-content"></div>
+  </div>
+
   <!-- ===== BOTTOM NAVIGATION ===== -->
   <nav class="bottom-nav">
     <button class="nav-item active" onclick="navigateTo('dashboard')" id="nav-dashboard">
@@ -404,6 +501,10 @@
     <button class="nav-item" onclick="navigateTo('inventory')" id="nav-inventory">
       <div class="nav-icon">🪣</div>
       <span class="nav-label">Bartan</span>
+    </button>
+    <button class="nav-item" onclick="navigateTo('sarai')" id="nav-sarai">
+      <div class="nav-icon">🏰</div>
+      <span class="nav-label">Sarai</span>
     </button>
     <button class="nav-item" onclick="navigateTo('customers')" id="nav-customers">
       <div class="nav-icon">👥</div>
@@ -422,13 +523,16 @@
   <div class="toast" id="toast"></div>
 
   <!-- ===== SCRIPTS ===== -->
-  <script src="js/db.js?v=4"></script>
-  <script src="js/inventory.js?v=4"></script>
-  <script src="js/booking.js?v=4"></script>
-  <script src="js/payment.js?v=4"></script>
-  <script src="js/report.js?v=4"></script>
-  <script src="js/reminder.js?v=4"></script>
-  <script src="js/app.js?v=4"></script>
+  <script src="js/db.js?v=12"></script>
+  <script src="js/inventory.js?v=12"></script>
+  <script src="js/booking.js?v=12"></script>
+  <script src="js/payment.js?v=12"></script>
+  <script src="js/report.js?v=12"></script>
+  <script src="js/reminder.js?v=12"></script>
+  <script src="js/sarai.js?v=12"></script>
+  <!-- Library for capturing Bill as image -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="js/app.js?v=12"></script>
 
 </body>
 </html>

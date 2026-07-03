@@ -103,57 +103,93 @@ function sendBookingConfirmWhatsApp(booking) {
 }
 
 // ============================================
-// 2. DUE DATE REMINDER — Overdue / Due today
+// 2. DUE DATE REMINDER — Overdue / Due today / General
 // ============================================
 function sendWhatsAppReminder(mobile, customerName, returnDate) {
   if (!mobile) { showToast('\u26A0\uFE0F No mobile number!'); return; }
 
+  // --- Safely parse returnDate ---
+  var hasValidDate  = returnDate && returnDate.trim() !== '';
+  var retDateObj    = hasValidDate ? new Date(returnDate) : null;
+  var isValidDate   = retDateObj && !isNaN(retDateObj.getTime());
+
   var returnFormatted = '';
-  try {
-    returnFormatted = new Date(returnDate).toLocaleDateString('en-IN', {
-      day: '2-digit', month: 'long', year: 'numeric'
-    });
-  } catch(e) { returnFormatted = returnDate || 'scheduled date'; }
-
-  var today      = new Date();
-  today.setHours(0,0,0,0);
-  var ret        = new Date(returnDate);
-  ret.setHours(0,0,0,0);
-  var overdueDays = Math.max(0, Math.floor((today - ret) / (1000*60*60*24)));
-  var isOverdueFlag = overdueDays > 0;
-
-  // Try to get pending amount from bookings list
-  var penaltyLine = '';
-  if (isOverdueFlag && window.appSettings && window.appSettings.penaltyPct) {
-    penaltyLine = E.fire + ' *Late Return Penalty may apply for ' + overdueDays + ' extra day(s).*\n';
+  if (isValidDate) {
+    try {
+      returnFormatted = retDateObj.toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'long', year: 'numeric'
+      });
+    } catch(e) { returnFormatted = returnDate; }
   }
 
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Calculate overdue days only if we have a valid date
+  var overdueDays   = 0;
+  var isOverdueFlag = false;
+  var isDueTodayFlag= false;
+
+  if (isValidDate) {
+    var ret = new Date(retDateObj);
+    ret.setHours(0, 0, 0, 0);
+    var diffMs   = today - ret;
+    overdueDays  = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    isOverdueFlag  = overdueDays > 0;
+    isDueTodayFlag = overdueDays === 0;
+  }
+
+  var bizName = getBizName();
+  var footer  = getWaFooter();
   var message;
-  if (isOverdueFlag) {
+
+  if (!isValidDate) {
+    // --- CASE 1: No date — General reminder from customer page ---
     message =
-      E.warn + ' *OVERDUE ALERT — ' + customerName + ' ji!*\n' +
-      '_' + getBizName() + '_\n' +
+      E.bell + ' *Bartan Kiraya Reminder*\n' +
       E.line + '\n\n' +
-      E.fire + ' *Your bartan return was due on ' + returnFormatted + '*\n' +
-      'You are now *' + overdueDays + ' day(s) late.*\n\n' +
-      penaltyLine +
+      E.pray + ' Hello *' + customerName + ' ji!*\n\n' +
+      'This is a reminder from *' + bizName + '*\n\n' +
+      E.bucket + ' If you have bartan rented from us, kindly ensure timely return.\n\n' +
+      E.warn   + ' Late returns will attract *penalty charges.*\n\n' +
+      E.phone  + ' Please contact us if you have any queries.\n' +
+      E.line + '\n' +
+      footer + '\n' +
+      '_' + bizName + '_';
+
+  } else if (isOverdueFlag) {
+    // --- CASE 2: Overdue ---
+    var penaltyNote = '';
+    if (window.appSettings && window.appSettings.penaltyPct) {
+      penaltyNote = E.fire + ' Penalty charges are being applied for *' + overdueDays + ' late day(s).*\n';
+    }
+    message =
+      E.warn + ' *OVERDUE ALERT*\n' +
+      E.line + '\n\n' +
+      E.pray + ' Hello *' + customerName + ' ji!*\n\n' +
+      'Your bartan return was due on:\n' +
+      E.cal + ' *' + returnFormatted + '*\n\n' +
+      E.fire + ' You are now *' + overdueDays + ' day(s) late.*\n' +
+      penaltyNote + '\n' +
       'Please return the bartan *IMMEDIATELY* to avoid further charges.\n\n' +
       E.phone + ' Contact us to settle the dues.\n' +
       E.line + '\n' +
-      getWaFooter() + '\n' +
-      '_' + getBizName() + '_';
+      footer + '\n' +
+      '_' + bizName + '_';
+
   } else {
+    // --- CASE 3: Due today ---
     message =
       E.bell + ' *Bartan Return Reminder*\n' +
-      '_' + getBizName() + '_\n' +
       E.line + '\n\n' +
       E.pray + ' Hello *' + customerName + ' ji!*\n\n' +
-      'Your bartan return date is *' + returnFormatted + '* (today).\n\n' +
+      'Your bartan return date is *today:*\n' +
+      E.cal + ' *' + returnFormatted + '*\n\n' +
       E.check + ' Please return the bartan on time.\n' +
-      E.warn  + ' Late returns will attract penalty charges.\n\n' +
+      E.warn  + ' Late returns will attract *penalty charges.*\n\n' +
       E.line + '\n' +
-      getWaFooter() + '\n' +
-      '_' + getBizName() + '_';
+      footer + '\n' +
+      '_' + bizName + '_';
   }
 
   openWhatsApp(mobile, message);

@@ -15,6 +15,9 @@ const PAGE_CONFIG = {
   'customer-detail': { title: '👤 Customer Detail', nav: null,             fab: false },
   'report':          { title: '📊 Reports',          nav: 'nav-report',     fab: false },
   'settings':        { title: '⚙️ Settings',         nav: null,             fab: false },
+  'sarai':           { title: '🏰 Sarai Bookings',   nav: 'nav-sarai',      fab: false },
+  'new-sarai-booking': { title: '➕ Book Sarai',     nav: null,             fab: false },
+  'sarai-detail':    { title: '📄 Sarai Detail',    nav: null,             fab: false },
 };
 
 let currentPage  = 'dashboard';
@@ -52,13 +55,14 @@ function navigateTo(page) {
 // ============================================
 async function onPageLoad(page) {
   switch (page) {
-    case 'dashboard':    await loadDashboard();       break;
+    case 'dashboard':    await loadDashboard(); await loadSaraiData(); break;
     case 'bookings':     await loadBookingsList();    break;
     case 'new-booking':  await loadNewBookingForm();  break;
     case 'inventory':    await loadInventoryPage();   break;
     case 'customers':    await loadCustomersPage();   break;
     case 'report':       await loadReportPage();      break;
     case 'settings':     await loadSettingsPage();    break;
+    case 'sarai':        await loadSaraiData();       break;
   }
 }
 
@@ -313,14 +317,37 @@ async function openBookingDetail(bookingId) {
   let bartanRows = '';
   for (const item of (booking.items || [])) {
     if (item.nag > 0) {
-      bartanRows += `
-        <tr>
-          <td>${item.name}</td>
-          <td>${item.nag}</td>
-          <td>₹${item.ratePerDay}/day</td>
-          <td>${booking.totalDays} days</td>
-          <td class="row-total">₹${item.rakam}</td>
-        </tr>`;
+      if (booking.status === 'active') {
+        bartanRows += `
+          <tr>
+            <td>${item.name}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:2px;">
+                <button class="btn btn-outline" style="padding:2px 6px;line-height:1;" onclick="updateBookingItem(${booking.id}, ${item.inventoryId}, 'qty', ${item.nag - 1})">-</button>
+                <input type="number" min="0" value="${item.nag}" style="width:36px;text-align:center;padding:4px;" inputmode="numeric" 
+                       onchange="updateBookingItem(${booking.id}, ${item.inventoryId}, 'qty', this.value)" />
+                <button class="btn btn-outline" style="padding:2px 6px;line-height:1;" onclick="updateBookingItem(${booking.id}, ${item.inventoryId}, 'qty', ${item.nag + 1})">+</button>
+              </div>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;">
+                ₹<input type="number" min="0" value="${item.ratePerDay}" style="width:52px;margin-left:2px;font-size:0.8rem;padding:6px 4px;" inputmode="numeric" 
+                       onchange="updateBookingItem(${booking.id}, ${item.inventoryId}, 'rate', this.value)" />
+              </div>
+            </td>
+            <td>${booking.totalDays} days</td>
+            <td class="row-total">₹${item.rakam}</td>
+          </tr>`;
+      } else {
+        bartanRows += `
+          <tr>
+            <td>${item.name}</td>
+            <td>${item.nag}</td>
+            <td>₹${item.ratePerDay}/day</td>
+            <td>${booking.totalDays} days</td>
+            <td class="row-total">₹${item.rakam}</td>
+          </tr>`;
+      }
     }
   }
 
@@ -333,6 +360,12 @@ async function openBookingDetail(bookingId) {
 
   const mobile     = customer?.mobile || booking.mobile || '';
   const paidAmount = (booking.totalAmount || 0) - (booking.pendingAmount || 0);
+  
+  let subTotal = 0;
+  for (const item of (booking.items || [])) {
+    if (item.nag > 0) subTotal += (item.rakam || 0);
+  }
+  const discount = booking.discount || 0;
 
   document.getElementById('booking-detail-content').innerHTML = `
     <div class="card">
@@ -363,10 +396,21 @@ async function openBookingDetail(bookingId) {
           <tbody>${bartanRows || '<tr><td colspan="5" style="text-align:center;color:var(--text-hint);">No items</td></tr>'}</tbody>
         </table>
       </div>
+      <div class="total-row" style="background:#fff;border-bottom:none;">
+        <span class="total-label">Sub Total</span>
+        <span class="total-value">${formatCurrency(subTotal)}</span>
+      </div>
+      <div class="total-row" style="background:#fff;border-bottom:none;padding-top:0;">
+        <span class="total-label" style="color:var(--danger);">Discount</span>
+        <span class="total-value" style="color:var(--danger);">
+          ${booking.status === 'active' ? `- ₹<input type="number" min="0" value="${discount}" style="width:60px;padding:4px;text-align:right;" onchange="updateBookingDiscount(${booking.id}, this.value)" />` : `- ${formatCurrency(discount)}`}
+        </span>
+      </div>
       <div class="total-row">
-        <span class="total-label">Total Amount</span>
+        <span class="total-label">Final Amount</span>
         <span class="total-value">${formatCurrency(booking.totalAmount)}</span>
       </div>
+      ${booking.status === 'active' ? `<div style="padding:10px;"><button class="btn btn-outline btn-sm" style="width:100%;" onclick="openAddBookingItemModal(${booking.id})">➕ Add New Bartan to this Booking</button></div>` : ''}
     </div>
 
     <div class="card">
@@ -417,12 +461,14 @@ async function openBookingDetail(bookingId) {
 
     <!-- Action Buttons -->
     <div class="btn-row">
-      ${mobile ? `<button class="btn btn-whatsapp" onclick="sendCurrentBookingWhatsApp()">📲 WhatsApp Bill</button>` : ''}
       <button class="btn btn-print" onclick="printBookingBill(${bookingId})">🖨️ Print Bill</button>
     </div>
     <div class="btn-row" style="margin-top:10px;">
       ${booking.pendingAmount > 0 ? `<button class="btn btn-success" onclick="openPaymentModal(${bookingId})">💰 Add Payment</button>` : ''}
-      ${booking.status === 'active' ? `<button class="btn btn-primary" onclick="openReturnModal(${bookingId})">&#9989; Mark Returned</button>` : ''}
+    </div>
+    <div class="btn-row" style="margin-top:10px;">
+      ${booking.status === 'active' ? `<button class="btn btn-accent" onclick="openExtendModal(${bookingId})">⏳ Extend</button>` : ''}
+      ${booking.status === 'active' ? `<button class="btn btn-primary" onclick="openReturnModal(${bookingId})">&#9989; Return</button>` : ''}
     </div>
     <div class="btn-row" style="margin-top:10px;">
       <button class="btn btn-outline" onclick="navigateTo('bookings')">← Back</button>
@@ -432,6 +478,260 @@ async function openBookingDetail(bookingId) {
   `;
 
   navigateTo('booking-detail');
+}
+
+async function updateBookingItem(bookingId, invId, field, newVal) {
+  const booking = await BartanDB.get(BartanDB.STORES.BOOKINGS, bookingId);
+  const inv     = await BartanDB.get(BartanDB.STORES.INVENTORY, Number(invId));
+  
+  if (!booking || !inv) return;
+  
+  const itemIndex = booking.items.findIndex(i => String(i.inventoryId) === String(invId));
+  if (itemIndex === -1) return;
+  
+  const item = booking.items[itemIndex];
+  const oldRakam = item.rakam;
+  let val = parseFloat(newVal) || 0;
+  
+  if (field === 'qty') {
+    val = parseInt(val) || 0;
+    const diff = val - item.nag;
+    if (diff > 0 && (inv.availableStock || 0) < diff) {
+      showToast(`⚠️ Only ${inv.availableStock} available in stock!`);
+      openBookingDetail(bookingId);
+      return;
+    }
+    inv.availableStock = (inv.availableStock || 0) - diff;
+    await BartanDB.put(BartanDB.STORES.INVENTORY, inv);
+    item.nag = val;
+  } else if (field === 'rate') {
+    item.ratePerDay = val;
+  }
+  
+  item.rakam = item.nag * item.ratePerDay * booking.totalDays;
+  
+  const diffRakam = item.rakam - oldRakam;
+  // Recalculate pending amount safely by checking what was actually paid
+  const paidAmount = (booking.totalAmount || 0) - (booking.pendingAmount || 0);
+  booking.totalAmount   = (booking.totalAmount || 0) + diffRakam;
+  booking.pendingAmount = booking.totalAmount - paidAmount;
+  
+  await BartanDB.put(BartanDB.STORES.BOOKINGS, booking);
+  showToast('✅ Bill updated!');
+  openBookingDetail(bookingId);
+}
+
+async function updateBookingDiscount(bookingId, newVal) {
+  const booking = await BartanDB.get(BartanDB.STORES.BOOKINGS, bookingId);
+  if (!booking) return;
+  
+  let val = parseFloat(newVal) || 0;
+  if (val < 0) val = 0;
+  
+  let subTotal = 0;
+  for (const item of booking.items || []) {
+    subTotal += (item.rakam || 0);
+  }
+  
+  if (val > subTotal) {
+    showToast('⚠️ Discount cannot be greater than subtotal!');
+    val = subTotal;
+  }
+  
+  booking.discount = val;
+  const newTotal = subTotal - val;
+  
+  const paidAmount = (booking.totalAmount || 0) - (booking.pendingAmount || 0);
+  booking.totalAmount = newTotal;
+  booking.pendingAmount = newTotal - paidAmount;
+  
+  await BartanDB.put(BartanDB.STORES.BOOKINGS, booking);
+  showToast('✅ Discount applied!');
+  openBookingDetail(bookingId);
+}
+
+// ============================================
+// EXTEND / REBOOK MODAL
+// ============================================
+function openExtendModal(bookingId) {
+  const existing = document.getElementById('extend-modal');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.id = 'extend-modal';
+  overlay.innerHTML = `
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">⏳ Extend / Rebook</div>
+      
+      <div class="form-group">
+        <label class="form-label">New Return Date</label>
+        <input type="date" class="form-control" id="ext-return-dt" />
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="closeExtendModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmExtend(${bookingId})">💾 Save</button>
+      </div>
+    </div>`;
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeExtendModal(); });
+  document.body.appendChild(overlay);
+}
+
+function closeExtendModal() {
+  const m = document.getElementById('extend-modal');
+  if (m) m.remove();
+}
+
+async function confirmExtend(bookingId) {
+  const newDate = document.getElementById('ext-return-dt').value;
+  if (!newDate) {
+    showToast('⚠️ Please select a new return date!');
+    return;
+  }
+  
+  const booking = await BartanDB.get(BartanDB.STORES.BOOKINGS, bookingId);
+  const bookingDt = new Date(booking.bookingDate);
+  const returnDt = new Date(newDate);
+  
+  if (returnDt <= bookingDt) {
+    showToast('⚠️ Return date must be after booking date!');
+    return;
+  }
+  
+  const diff = Math.ceil((returnDt - bookingDt) / (1000 * 60 * 60 * 24));
+  const newTotalDays = Math.max(1, diff);
+  
+  let newSubTotal = 0;
+  for (const item of booking.items || []) {
+    item.rakam = item.nag * item.ratePerDay * newTotalDays;
+    newSubTotal += item.rakam;
+  }
+  
+  const discount = booking.discount || 0;
+  let newTotalAmount = newSubTotal - discount;
+  if (newTotalAmount < 0) newTotalAmount = 0;
+  
+  const diffAmount = newTotalAmount - (booking.totalAmount || 0);
+  
+  booking.returnDate = newDate;
+  booking.totalDays = newTotalDays;
+  booking.totalAmount = newTotalAmount;
+  
+  const paidAmount = (booking.totalAmount - diffAmount) - (booking.pendingAmount || 0);
+  booking.pendingAmount = booking.totalAmount - paidAmount;
+  
+  await BartanDB.put(BartanDB.STORES.BOOKINGS, booking);
+  
+  closeExtendModal();
+  showToast('✅ Booking extended successfully!');
+  openBookingDetail(bookingId);
+}
+
+// ============================================
+// ADD NEW ITEM TO EXISTING BOOKING
+// ============================================
+async function openAddBookingItemModal(bookingId) {
+  const inventory = await BartanDB.getAll(BartanDB.STORES.INVENTORY);
+  let optionsHtml = '<option value="">Select Item...</option>';
+  for (const inv of inventory) {
+    if (inv.availableStock > 0) {
+      optionsHtml += `<option value="${inv.id}" data-rate="${inv.ratePerDay}" data-name="${inv.name}">
+        ${inv.name} (Avail: ${inv.availableStock})
+      </option>`;
+    }
+  }
+
+  const existing = document.getElementById('add-item-modal');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.id = 'add-item-modal';
+  overlay.innerHTML = `
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">➕ Add New Bartan</div>
+      
+      <div class="form-group">
+        <label class="form-label">Select Bartan</label>
+        <select class="form-control" id="add-item-select" onchange="document.getElementById('add-item-rate').value = this.options[this.selectedIndex].dataset.rate || ''">
+          ${optionsHtml}
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Qty (Nag)</label>
+          <input type="number" class="form-control" id="add-item-qty" min="1" value="1" />
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Rate/Day</label>
+          <input type="number" class="form-control" id="add-item-rate" min="0" />
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="closeAddBookingItemModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmAddBookingItem(${bookingId})">💾 Add Item</button>
+      </div>
+    </div>`;
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeAddBookingItemModal(); });
+  document.body.appendChild(overlay);
+}
+
+function closeAddBookingItemModal() {
+  const m = document.getElementById('add-item-modal');
+  if (m) m.remove();
+}
+
+async function confirmAddBookingItem(bookingId) {
+  const select = document.getElementById('add-item-select');
+  const invId = select.value;
+  if (!invId) { showToast('⚠️ Please select an item!'); return; }
+  
+  const name = select.options[select.selectedIndex].dataset.name;
+  const qty = parseInt(document.getElementById('add-item-qty').value) || 0;
+  const rate = parseFloat(document.getElementById('add-item-rate').value) || 0;
+  
+  if (qty <= 0) { showToast('⚠️ Qty must be at least 1'); return; }
+  
+  const booking = await BartanDB.get(BartanDB.STORES.BOOKINGS, bookingId);
+  const inv = await BartanDB.get(BartanDB.STORES.INVENTORY, Number(invId));
+  
+  if (inv.availableStock < qty) {
+    showToast(`⚠️ Only ${inv.availableStock} available!`);
+    return;
+  }
+  
+  const existingItem = booking.items.find(i => String(i.inventoryId) === String(invId));
+  if (existingItem) {
+    showToast('⚠️ This item is already in the bill. Please edit its quantity directly in the list.');
+    return;
+  }
+  
+  inv.availableStock -= qty;
+  await BartanDB.put(BartanDB.STORES.INVENTORY, inv);
+  
+  const rakam = qty * rate * booking.totalDays;
+  booking.items.push({
+    inventoryId: Number(invId),
+    name: name,
+    nag: qty,
+    ratePerDay: rate,
+    rakam: rakam
+  });
+  
+  booking.totalAmount = (booking.totalAmount || 0) + rakam;
+  booking.pendingAmount = (booking.pendingAmount || 0) + rakam;
+  
+  await BartanDB.put(BartanDB.STORES.BOOKINGS, booking);
+  
+  closeAddBookingItemModal();
+  showToast('✅ Item added successfully!');
+  openBookingDetail(bookingId);
 }
 
 // ============================================
@@ -512,6 +812,9 @@ async function printBookingBill(bookingId) {
     </div>
     <div class="btn-row no-print" style="margin:8px 0;">
       <button class="btn btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
+      ${mobile ? `<button class="btn btn-whatsapp" onclick="shareBillImage(${bookingId}, '${mobile}')">📲 Share Bill</button>` : `<button class="btn btn-whatsapp" onclick="shareBillImage(${bookingId}, '')">📲 Share Bill</button>`}
+    </div>
+    <div class="btn-row no-print" style="margin-top:8px;">
       <button class="btn btn-outline" onclick="closePrintModal()">Close</button>
     </div>`;
 
@@ -528,6 +831,67 @@ async function printBookingBill(bookingId) {
 
   overlay.addEventListener('click', e => { if (e.target === overlay) closePrintModal(); });
   document.body.appendChild(overlay);
+}
+
+async function shareBillImage(bookingId, mobile) {
+  const billDiv = document.getElementById('print-bill-div');
+  if (!billDiv) return;
+
+  showToast('⏳ Generating Bill Image...');
+  
+  try {
+    if (typeof html2canvas === 'undefined') {
+      showToast('⚠️ html2canvas not loaded. Sending text message instead.');
+      sendCurrentBookingWhatsApp();
+      return;
+    }
+    
+    // Make sure bill is fully visible before capturing
+    const canvas = await html2canvas(billDiv, { 
+      scale: 2, 
+      useCORS: true,
+      backgroundColor: '#ffffff'
+    });
+    
+    canvas.toBlob(async (blob) => {
+      const file = new File([blob], `Bill_${bookingId}.png`, { type: 'image/png' });
+      
+      // Try Web Share API first (Native sharing menu on Android/iOS/Windows)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: 'Bartan Kiraya Bill',
+            text: 'Please find attached your bill.',
+            files: [file]
+          });
+          showToast('✅ Bill Shared Successfully!');
+        } catch (err) {
+          console.error('Share cancelled or failed', err);
+        }
+      } else {
+        // Fallback: If device doesn't support file sharing, just download the image 
+        // so user can attach it manually to WhatsApp.
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Bill_${bookingId}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        showToast('⬇️ Image Downloaded. Please attach it manually in WhatsApp.');
+        
+        // Open whatsapp chat anyway
+        if (mobile) {
+          setTimeout(() => {
+            window.open(`https://wa.me/91${mobile}?text=Please check the downloaded bill image.`, '_blank');
+          }, 1000);
+        }
+      }
+    }, 'image/png');
+  } catch(e) {
+    console.error(e);
+    showToast('⚠️ Failed to generate bill image');
+  }
 }
 
 function closePrintModal() {
@@ -900,10 +1264,14 @@ async function loadBartanTable() {
       <td>
         <input type="number" min="0" max="${stockAvail}"
           id="nag-${item.id}" placeholder="0"
-          oninput="updateRowTotal(${item.id}, ${item.ratePerDay})"
+          oninput="updateRowTotal(${item.id})"
           style="width:52px;" inputmode="numeric" />
       </td>
-      <td style="font-size:0.8rem;">₹${item.ratePerDay}/day</td>
+      <td>
+        <div style="display:flex;align-items:center;">
+          ₹<input type="number" min="0" id="rate-${item.id}" value="${item.ratePerDay}" oninput="updateRowTotal(${item.id})" style="width:52px;margin-left:2px;font-size:0.8rem;padding:6px 4px;" inputmode="numeric" />
+        </div>
+      </td>
       <td class="row-total" id="rakam-${item.id}">₹0</td>
     </tr>`;
   }).join('');
@@ -917,14 +1285,21 @@ function updateDays() {
   const diff = Math.ceil((new Date(returnDt) - new Date(bookingDt)) / (1000 * 60 * 60 * 24));
   const days = Math.max(1, diff);
   document.getElementById('nb-days').textContent = `${days} days`;
-  updateTotal();
+  
+  const rows = document.querySelectorAll('[id^="nag-"]');
+  rows.forEach(input => {
+    const invId = input.id.split('-')[1];
+    updateRowTotal(invId);
+  });
 }
 
-function updateRowTotal(invId, ratePerDay) {
-  const nagInput = document.getElementById(`nag-${invId}`);
-  const nag      = parseInt(nagInput.value) || 0;
-  const days     = getTotalDays();
-  const rakam    = nag * ratePerDay * days;
+function updateRowTotal(invId) {
+  const nagInput  = document.getElementById(`nag-${invId}`);
+  const rateInput = document.getElementById(`rate-${invId}`);
+  const nag       = parseInt(nagInput.value) || 0;
+  const rate      = parseFloat(rateInput?.value) || 0;
+  const days      = getTotalDays();
+  const rakam     = nag * rate * days;
   document.getElementById(`rakam-${invId}`).textContent = `₹${rakam}`;
   updateTotal();
 }
@@ -996,8 +1371,9 @@ async function saveBooking() {
         showToast(`⚠️ ${inv.name} — only ${inv.availableStock} available!`);
         return;
       }
-      const rakam = nag * inv.ratePerDay * days;
-      items.push({ inventoryId: inv.id, name: inv.name, nag, ratePerDay: inv.ratePerDay, rakam });
+      const customRate = parseFloat(document.getElementById(`rate-${inv.id}`)?.value) || 0;
+      const rakam = nag * customRate * days;
+      items.push({ inventoryId: inv.id, name: inv.name, nag, ratePerDay: customRate, rakam });
       totalAmount += rakam;
 
       inv.availableStock = Math.max(0, (inv.availableStock || 0) - nag);
