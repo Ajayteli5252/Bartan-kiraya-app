@@ -1,0 +1,25 @@
+<!-- booking.html — Booking List & New Booking -->
+
+<!-- Search Bar -->
+<div class="search-bar">
+  <span class="search-icon">🔍</span>
+  <input type="text" id="bookingSearch" placeholder="Customer naam ya receipt no. search karein..."
+    oninput="searchBookings(this.value)" />
+</div>
+
+<!-- Filter Tabs -->
+<div style="display:flex; gap:8px; margin-bottom:14px; overflow-x:auto; padding-bottom:4px;">
+  <button class="btn btn-primary btn-sm" onclick="filterBookings('all', this)">Sab</button>
+  <button class="btn btn-outline btn-sm" onclick="filterBookings('active', this)">Active</button>
+  <button class="btn btn-outline btn-sm" onclick="filterBookings('returned', this)">Returned</button>
+  <button class="btn btn-outline btn-sm" onclick="filterBookings('pending', this)">Pending Payment</button>
+</div>
+
+<!-- Bookings List -->
+<div id="bookings-list">
+  <div class="empty-state">
+    <div class="empty-icon">📋</div>
+    <p>Koi booking nahi mili</p>
+    <button class="btn btn-primary btn-sm" onclick="navigateTo('new-booking')">+ Naya Booking</button>
+  </div>
+</div>

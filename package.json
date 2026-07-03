@@ -1,0 +1,12 @@
+{
+  "name": "bartan-kiraya-app",
+  "version": "1.0.0",
+  "description": "Shiv Shakti Bartan Kiraya App",
+  "scripts": {
+    "start": "npx -y http-server -p 8080 -o",
+    "dev": "npx -y http-server -p 8080 -o"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

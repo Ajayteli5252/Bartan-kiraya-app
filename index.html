@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#E65100" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>शिवशक्ति बर्तन किराया</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ===== TOP HEADER ===== -->
+  <header class="app-header">
+    <h1 id="pageTitle">🏠 Dashboard</h1>
+    <button class="header-icon" id="headerActionBtn" title="Action">＋</button>
+  </header>
+
+  <!-- ===== PAGES ===== -->
+
+  <!-- 1. DASHBOARD PAGE -->
+  <div class="page active" id="page-dashboard">
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Active Bookings</div>
+        <div class="stat-value" id="stat-active">0</div>
+        <div class="stat-sub">Abhi bahar hain</div>
+      </div>
+      <div class="stat-card warning">
+        <div class="stat-label">Pending Payment</div>
+        <div class="stat-value" id="stat-pending">₹0</div>
+        <div class="stat-sub">Baaki hai</div>
+      </div>
+      <div class="stat-card success">
+        <div class="stat-label">This Month</div>
+        <div class="stat-value" id="stat-month">₹0</div>
+        <div class="stat-sub">Income</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Customers</div>
+        <div class="stat-value" id="stat-customers">0</div>
+        <div class="stat-sub">Registered</div>
+      </div>
+    </div>
+
+    <!-- Active Bookings List -->
+    <div class="section-header">
+      <span class="section-title">Active Bookings</span>
+      <button class="section-link" onclick="navigateTo('bookings')">View All</button>
+    </div>
+    <div id="dashboard-bookings">
+      <div class="empty-state">
+        <div class="empty-icon">📦</div>
+        <p>Koi active booking nahi hai</p>
+        <button class="btn btn-primary btn-sm" onclick="navigateTo('new-booking')">+ Naya Booking</button>
+      </div>
+    </div>
+
+    <!-- Return Due Today -->
+    <div class="section-header" style="margin-top:8px;">
+      <span class="section-title">⚠️ Aaj Wapas Aane Wale</span>
+    </div>
+    <div id="dashboard-due">
+      <p style="font-size:0.85rem; color:var(--text-hint); padding:8px 0;">Aaj koi return due nahi hai</p>
+    </div>
+
+  </div>
+
+  <!-- 2. BOOKINGS PAGE -->
+  <div class="page" id="page-bookings">
+
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="bookingSearch" placeholder="Customer naam ya receipt no. search karein..." oninput="searchBookings(this.value)" />
+    </div>
+
+    <!-- Filter Tabs -->
+    <div style="display:flex; gap:8px; margin-bottom:14px; overflow-x:auto; padding-bottom:4px;">
+      <button class="btn btn-primary btn-sm filter-btn" onclick="filterBookings('all', this)">Sab</button>
+      <button class="btn btn-outline btn-sm filter-btn" onclick="filterBookings('active', this)">Active</button>
+      <button class="btn btn-outline btn-sm filter-btn" onclick="filterBookings('overdue', this)">⚠️ Overdue</button>
+      <button class="btn btn-outline btn-sm filter-btn" onclick="filterBookings('returned', this)">Returned</button>
+      <button class="btn btn-outline btn-sm filter-btn" onclick="filterBookings('pending', this)">Pending</button>
+    </div>
+
+    <div id="bookings-list">
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p>Koi booking nahi mili</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 3. NEW BOOKING PAGE -->
+  <div class="page" id="page-new-booking">
+
+    <div class="card">
+      <div class="card-title">Customer Details</div>
+
+      <div class="form-group">
+        <label class="form-label">Mobile Number *</label>
+        <input type="tel" class="form-control" id="nb-mobile" maxlength="10"
+          placeholder="Mobile number dalein" oninput="autofillCustomer(this.value)" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Shreemaan (Naam) *</label>
+        <input type="text" class="form-control" id="nb-name" placeholder="Customer ka naam" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pita Ka Naam</label>
+        <input type="text" class="form-control" id="nb-father" placeholder="Pita ka naam" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Booking Details</div>
+      <div class="form-group">
+        <label class="form-label">Booking Date & Time *</label>
+        <input type="datetime-local" class="form-control" id="nb-booking-dt" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Wapsi Date *</label>
+        <input type="date" class="form-control" id="nb-return-dt" />
+      </div>
+      <div class="total-row" style="margin-bottom:0;">
+        <span class="total-label">📅 Total Days</span>
+        <span class="total-value" id="nb-days">0 din</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Bartan Select Karein</div>
+      <div style="overflow-x:auto;">
+        <table class="bartan-table">
+          <thead>
+            <tr>
+              <th>Bartan</th>
+              <th>Nag</th>
+              <th>Dar/Din</th>
+              <th>Rakam</th>
+            </tr>
+          </thead>
+          <tbody id="nb-bartan-rows">
+            <!-- Filled by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div class="total-row">
+        <span class="total-label">Total Rakam</span>
+        <span class="total-value" id="nb-total">₹0</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Payment</div>
+      <div class="form-group">
+        <label class="form-label">Advance / Deposit (₹)</label>
+        <input type="number" class="form-control" id="nb-advance" placeholder="0" oninput="updatePending()" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Payment Mode</label>
+        <select class="form-control" id="nb-pay-mode">
+          <option value="cash">💵 Cash</option>
+          <option value="upi">📱 UPI</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes (Optional)</label>
+        <input type="text" class="form-control" id="nb-notes" placeholder="Koi special note..." />
+      </div>
+      <div class="total-row">
+        <span class="total-label">Baaki (Pending)</span>
+        <span class="total-value" id="nb-pending" style="color:var(--danger);">₹0</span>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-bottom:16px;">
+      <button class="btn btn-outline" onclick="navigateTo('bookings')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBooking()">💾 Save Booking</button>
+    </div>
+
+  </div>
+
+  <!-- 4. BOOKING DETAIL PAGE -->
+  <div class="page" id="page-booking-detail">
+    <div id="booking-detail-content">
+      <!-- Filled by JS -->
+    </div>
+  </div>
+
+  <!-- 5. INVENTORY PAGE -->
+  <div class="page" id="page-inventory">
+
+    <div class="card" style="background:var(--surface-2); border-color:var(--accent-dark);">
+      <p style="font-size:0.82rem; color:var(--text-secondary);">
+        💡 Har bartan ka <b>Total Stock</b> aur <b>Rate per Day</b> set karein.
+        Available stock booking ke time auto-update hoga.
+      </p>
+    </div>
+
+    <div class="card">
+      <div id="inventory-list">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 6. CUSTOMERS PAGE -->
+  <div class="page" id="page-customers">
+
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="customerSearch" placeholder="Naam ya mobile search karein..."
+        oninput="searchCustomers(this.value)" />
+    </div>
+
+    <div id="customers-list">
+      <div class="empty-state">
+        <div class="empty-icon">👥</div>
+        <p>Koi customer nahi mila</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 6b. CUSTOMER DETAIL PAGE -->
+  <div class="page" id="page-customer-detail">
+    <div id="customer-detail-content">
+      <!-- Filled by JS -->
+    </div>
+  </div>
+
+  <!-- 7. REPORT PAGE -->
+  <div class="page" id="page-report">
+
+    <div class="card no-print">
+      <div class="card-title">Report Filter</div>
+      <div class="form-group">
+        <label class="form-label">Year</label>
+        <select class="form-control" id="report-year" onchange="loadReport()">
+          <!-- Filled by JS -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Month (Optional)</label>
+        <select class="form-control" id="report-month" onchange="loadReport()">
+          <option value="">Poora Saal</option>
+          <option value="0">January</option>
+          <option value="1">February</option>
+          <option value="2">March</option>
+          <option value="3">April</option>
+          <option value="4">May</option>
+          <option value="5">June</option>
+          <option value="6">July</option>
+          <option value="7">August</option>
+          <option value="8">September</option>
+          <option value="9">October</option>
+          <option value="10">November</option>
+          <option value="11">December</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Report Output -->
+    <div id="report-output">
+      <!-- Filled by JS -->
+    </div>
+
+    <div class="btn-row no-print" style="margin-bottom:16px;">
+      <button class="btn btn-outline" onclick="window.print()">🖨️ Print Report</button>
+    </div>
+
+  </div>
+
+  <!-- ===== BOTTOM NAVIGATION ===== -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="navigateTo('dashboard')" id="nav-dashboard">
+      <div class="nav-icon">🏠</div>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" onclick="navigateTo('bookings')" id="nav-bookings">
+      <div class="nav-icon">📋</div>
+      <span class="nav-label">Bookings</span>
+    </button>
+    <button class="nav-item" onclick="navigateTo('inventory')" id="nav-inventory">
+      <div class="nav-icon">🪣</div>
+      <span class="nav-label">Bartan</span>
+    </button>
+    <button class="nav-item" onclick="navigateTo('customers')" id="nav-customers">
+      <div class="nav-icon">👥</div>
+      <span class="nav-label">Customers</span>
+    </button>
+    <button class="nav-item" onclick="navigateTo('report')" id="nav-report">
+      <div class="nav-icon">📊</div>
+      <span class="nav-label">Report</span>
+    </button>
+  </nav>
+
+  <!-- ===== FAB Button ===== -->
+  <button class="fab" id="fabBtn" onclick="navigateTo('new-booking')" title="Naya Booking">＋</button>
+
+  <!-- ===== TOAST ===== -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ===== SCRIPTS ===== -->
+  <script src="js/db.js?v=3"></script>
+  <script src="js/inventory.js?v=3"></script>
+  <script src="js/booking.js?v=3"></script>
+  <script src="js/payment.js?v=3"></script>
+  <script src="js/report.js?v=3"></script>
+  <script src="js/reminder.js?v=3"></script>
+  <script src="js/app.js?v=3"></script>
+
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!-- dashboard.html — Home Screen -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Active Bookings</div>
+    <div class="stat-value" id="stat-active">0</div>
+    <div class="stat-sub">Abhi bahar hain</div>
+  </div>
+  <div class="stat-card warning">
+    <div class="stat-label">Pending Payment</div>
+    <div class="stat-value" id="stat-pending">₹0</div>
+    <div class="stat-sub">Baaki hai</div>
+  </div>
+  <div class="stat-card success">
+    <div class="stat-label">This Month</div>
+    <div class="stat-value" id="stat-month">₹0</div>
+    <div class="stat-sub">Income</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Customers</div>
+    <div class="stat-value" id="stat-customers">0</div>
+    <div class="stat-sub">Registered</div>
+  </div>
+</div>
+
+<div class="section-header">
+  <span class="section-title">Active Bookings</span>
+  <button class="section-link" onclick="navigateTo('bookings')">View All</button>
+</div>
+<div id="dashboard-bookings">
+  <div class="empty-state">
+    <div class="empty-icon">📦</div>
+    <p>Koi active booking nahi hai</p>
+    <button class="btn btn-primary btn-sm" onclick="navigateTo('new-booking')">+ Naya Booking</button>
+  </div>
+</div>
+
+<div class="section-header" style="margin-top:8px;">
+  <span class="section-title">⚠️ Aaj Wapas Aane Wale</span>
+</div>
+<div id="dashboard-due">
+  <p style="font-size:0.85rem; color:var(--text-hint); padding:8px 0;">Aaj koi return due nahi hai ✅</p>
+</div>
