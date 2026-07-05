@@ -464,6 +464,7 @@ async function openBookingDetail(bookingId) {
     <!-- Action Buttons -->
     <div class="btn-row">
       <button class="btn btn-print" onclick="printBookingBill(${bookingId})">🖨️ Print Bill</button>
+      <button class="btn btn-whatsapp" onclick="shareBookingWhatsApp(${bookingId}, 'bartan')">💬 WhatsApp</button>
     </div>
     <div class="btn-row" style="margin-top:10px;">
       ${booking.pendingAmount > 0 ? `<button class="btn btn-success" onclick="openPaymentModal(${bookingId})">💰 Add Payment</button>` : ''}
@@ -2002,6 +2003,11 @@ async function startApp() {
         splash.classList.add('splash-hidden');
         setTimeout(() => splash.remove(), 600);
       }
+      
+      // Show onboarding if no business name is set
+      if (!appSettings.businessName) {
+        document.getElementById('onboarding-screen').style.display = 'block';
+      }
     };
 
     if (document.readyState === 'complete') {
@@ -2026,4 +2032,89 @@ async function startApp() {
   }
 }
 
+// Initialize App on Load
 document.addEventListener('DOMContentLoaded', startApp);
+
+// ============================================
+// ONBOARDING (NEW SHOPKEEPER SETUP)
+// ============================================
+async function completeOnboarding() {
+  const bName = document.getElementById('ob-business-name').value.trim();
+  const oName = document.getElementById('ob-owner-name').value.trim();
+  const mobile = document.getElementById('ob-mobile').value.trim();
+  const address = document.getElementById('ob-address').value.trim();
+
+  if (!bName || !mobile) {
+    showToast('⚠️ Business Name and Mobile are required!');
+    return;
+  }
+
+  const settings = {
+    businessName: bName,
+    ownerName: oName,
+    phone: mobile,
+    address: address
+  };
+
+  appSettings = { ...appSettings, ...settings };
+  await BartanDB.saveSettings(appSettings);
+
+  const nameEl = document.getElementById('appBusinessName');
+  if (nameEl) nameEl.textContent = bName;
+
+  const setBName = document.getElementById('set-business-name');
+  if (setBName) setBName.value = bName;
+  const setOName = document.getElementById('set-owner-name');
+  if (setOName) setOName.value = oName;
+
+  document.getElementById('onboarding-screen').style.display = 'none';
+  showToast('✅ Setup Complete! Welcome to the app.');
+}
+
+// ============================================
+// WhatsApp Integration
+// ============================================
+async function shareBookingWhatsApp(bookingId, type) {
+  let booking, customerName, mobile, pendingAmount, totalAmount, receiptNo;
+
+  if (type === 'sarai') {
+    booking = await BartanDB.get(BartanDB.STORES.SARAI_BOOKINGS, bookingId);
+    if (!booking) return;
+    customerName = booking.customerName;
+    mobile = booking.mobile;
+    pendingAmount = booking.pendingAmount || 0;
+    totalAmount = booking.totalAmount || 0;
+    receiptNo = `Sarai Check-in (${new Date(booking.fromDate).toLocaleDateString('en-IN')})`;
+  } else {
+    booking = await BartanDB.get(BartanDB.STORES.BOOKINGS, bookingId);
+    if (!booking) return;
+    customerName = booking.customerName;
+    if (booking.customerId) {
+      const c = await BartanDB.get(BartanDB.STORES.CUSTOMERS, booking.customerId);
+      if (c) {
+        customerName = c.name;
+        mobile = c.mobile;
+      }
+    }
+    mobile = mobile || booking.mobile;
+    pendingAmount = booking.pendingAmount || 0;
+    totalAmount = booking.totalAmount || 0;
+    receiptNo = booking.receiptNo;
+  }
+
+  if (!mobile || mobile.trim() === '') {
+    showToast('⚠️ No mobile number found for this customer.');
+    return;
+  }
+
+  // Format the mobile number (remove spaces, add 91 if missing)
+  let phone = mobile.replace(/\D/g, '');
+  if (phone.length === 10) phone = '91' + phone;
+
+  const msg = `Namaste ${customerName} Ji,\n\nYeh aapki booking (${receiptNo}) ka receipt detail hai.\n\nTotal Bill: ₹${totalAmount}\nPending Amount: ₹${pendingAmount}\n\nDhanyawad,\nShri Shivshakti Ghanavar Teli Samaj Dharmshala`;
+  
+  const encodedMsg = encodeURIComponent(msg);
+  const waUrl = `https://wa.me/${phone}?text=${encodedMsg}`;
+  
+  window.open(waUrl, '_blank');
+}

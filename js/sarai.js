@@ -335,7 +335,8 @@ async function openSaraiDetail(id) {
       ${booking.status === 'active' ? `<button class="btn btn-primary" onclick="markSaraiCompleted(${id})">&#9989; Mark Completed</button>` : ''}
     </div>
     <div class="btn-row" style="margin-top:10px;">
-      <button class="btn btn-whatsapp" onclick="shareSaraiReceipt(${id})">📲 Share Receipt (PDF)</button>
+      <button class="btn btn-whatsapp" onclick="shareBookingWhatsApp(${id}, 'sarai')">💬 Share (Text)</button>
+      <button class="btn btn-outline" style="color:var(--primary);border-color:var(--primary);" onclick="shareSaraiReceipt(${id})">📄 Share (PDF)</button>
     </div>
     <div class="btn-row" style="margin-top:10px;">
       <button class="btn btn-outline" onclick="navigateTo('sarai')">← Back to List</button>

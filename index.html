@@ -6,14 +6,27 @@
   <meta name="theme-color" content="#E65100" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="description" content="Shiv Shakti Bartan Kiraya — Utensil Rental Management App" />
-  <title>Shiv Shakti Bartan Kiraya</title>
-  <link rel="stylesheet" href="css/style.css?v=4" />
+  <meta name="description" content="Easy Rent Manager — Utensil Rental Management App" />
+  <title>Easy Rent Manager</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css?v=5" />
   <style>
     /* Hide Google Translate Toolbar & Branding */
     body { top: 0 !important; }
-    .skiptranslate, .goog-te-banner-frame, #google_translate_element { display: none !important; }
-    .goog-te-spinner-pos { display: none !important; }
+    #google_translate_element, 
+    .goog-te-banner-frame, 
+    .goog-te-gadget-icon,
+    .goog-te-gadget-simple,
+    .goog-te-gadget,
+    .goog-te-spinner-pos,
+    #goog-gt-tt,
+    .VIpgJd-ZVi9od-aZ2wEe-wOHMyf,
+    .VIpgJd-ZVi9od-aZ2wEe-wOHMyf-ti6hGc,
+    .VIpgJd-ZVi9od-ORHb-OEVmcd,
+    div.skiptranslate > iframe,
+    iframe.skiptranslate { 
+      display: none !important; 
+    }
     
     /* Professional Splash Screen */
     #splash-screen {
@@ -87,9 +100,37 @@
   <!-- Splash Screen -->
   <div id="splash-screen">
     <div class="splash-logo">🪣</div>
-    <div class="splash-title">Shiv Shakti</div>
-    <div class="splash-subtitle">Bartan Kiraya App</div>
+    <div class="splash-title">Easy Rent</div>
+    <div class="splash-subtitle">Manager</div>
     <div class="splash-loader"></div>
+  </div>
+
+  <!-- ===== ONBOARDING SCREEN ===== -->
+  <div id="onboarding-screen" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:9000; padding:20px; overflow-y:auto;">
+    <div style="text-align:center; margin-top:40px; margin-bottom:20px;">
+      <div style="font-size:3rem; margin-bottom:10px;">👋</div>
+      <h2 style="color:var(--primary); font-size:1.6rem; font-weight:800;">Welcome to Bartan Kiraya!</h2>
+      <p style="color:var(--text-secondary); font-size:0.9rem;">Let's set up your business details. This will be printed on your bills.</p>
+    </div>
+    <div class="card" style="box-shadow:var(--shadow-lg);">
+      <div class="form-group">
+        <label class="form-label">Business / Shop Name <span style="color:red;">*</span></label>
+        <input type="text" class="form-control" id="ob-business-name" placeholder="e.g. Shiv Shakti Bartan Kiraya" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Owner Name</label>
+        <input type="text" class="form-control" id="ob-owner-name" placeholder="e.g. Ramesh Bhai" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mobile Number <span style="color:red;">*</span></label>
+        <input type="tel" class="form-control" id="ob-mobile" placeholder="e.g. 9876543210" inputmode="numeric" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Address (Optional)</label>
+        <input type="text" class="form-control" id="ob-address" placeholder="e.g. Main Market, Jaipur" />
+      </div>
+      <button class="btn btn-primary" onclick="completeOnboarding()" style="margin-top:10px;">🚀 Start Using App</button>
+    </div>
   </div>
 
   <!-- Hidden Google Translate Element -->
@@ -606,13 +647,13 @@
   <div class="toast" id="toast"></div>
 
   <!-- ===== SCRIPTS ===== -->
-  <script src="js/db.js?v=24"></script>
-  <script src="js/inventory.js?v=24"></script>
-  <script src="js/booking.js?v=24"></script>
-  <script src="js/payment.js?v=24"></script>
-  <script src="js/report.js?v=24"></script>
-  <script src="js/reminder.js?v=24"></script>
-  <script src="js/sarai.js?v=24"></script>
+  <script src="js/db.js?v=26"></script>
+  <script src="js/inventory.js?v=26"></script>
+  <script src="js/booking.js?v=26"></script>
+  <script src="js/payment.js?v=26"></script>
+  <script src="js/report.js?v=26"></script>
+  <script src="js/reminder.js?v=26"></script>
+  <script src="js/sarai.js?v=26"></script>
   <!-- Library for capturing Bill as image -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -629,7 +670,7 @@
   </script>
   <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
-  <script src="js/app.js?v=24"></script>
+  <script src="js/app.js?v=26"></script>
 
 </body>
 </html>

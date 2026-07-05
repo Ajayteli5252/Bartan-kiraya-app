@@ -153,20 +153,22 @@ body {
   cursor: pointer;
   padding: 6px 8px;
   border-radius: var(--radius-sm);
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: none;
   background: none;
   color: var(--text-hint);
   flex: 1;
+  position: relative;
 }
-.nav-item.active { color: var(--primary); }
-.nav-item.active .nav-icon { background: var(--surface-2); }
+.nav-item:active { transform: scale(0.92); }
+.nav-item.active { color: var(--primary); transform: translateY(-4px); }
+.nav-item.active .nav-icon { background: var(--surface-2); border-radius: 16px; box-shadow: 0 4px 12px rgba(230,81,0,0.15); }
 .nav-icon {
   width: 38px; height: 38px;
   border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
   font-size: 1.25rem;
-  transition: background 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .nav-label { font-size: 0.62rem; font-weight: 600; }
 
@@ -176,14 +178,39 @@ body {
 .page {
   display: none;
   padding: 14px;
-  animation: fadeIn 0.25s ease;
+  animation: pageSlideUp 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 .page.active { display: block; }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
+@keyframes pageSlideUp {
+  from { opacity: 0; transform: translateY(12px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ============================================
+   STAGGER ANIMATIONS
+   ============================================ */
+@keyframes itemSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+.page.active .card, 
+.page.active .booking-item, 
+.page.active .stat-card,
+.page.active .inv-item,
+.modal-sheet .card {
+  animation: itemSlideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.page.active > *:nth-child(1) { animation-delay: 0.05s; }
+.page.active > *:nth-child(2) { animation-delay: 0.10s; }
+.page.active > *:nth-child(3) { animation-delay: 0.15s; }
+.page.active > *:nth-child(4) { animation-delay: 0.20s; }
+.page.active > *:nth-child(5) { animation-delay: 0.25s; }
+.page.active > *:nth-child(6) { animation-delay: 0.30s; }
+.page.active > *:nth-child(7) { animation-delay: 0.35s; }
+.page.active > *:nth-child(n+8) { animation-delay: 0.40s; }
 
 /* ============================================
    CARDS
@@ -430,8 +457,28 @@ select.form-control { appearance: none; cursor: pointer; }
   font-family: inherit;
   cursor: pointer;
   border: none;
-  transition: all 0.18s;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.btn::after {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 5px; height: 5px;
+  background: rgba(255,255,255,0.4);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1) translate(-50%, -50%);
+  transform-origin: 50% 50%;
+}
+.btn:active::after {
+  animation: btnRipple 0.4s ease-out;
+}
+@keyframes btnRipple {
+  0% { transform: scale(0) translate(-50%, -50%); opacity: 0.5; }
+  100% { transform: scale(40) translate(-50%, -50%); opacity: 0; }
 }
 .btn-primary {
   background: var(--primary);
@@ -695,6 +742,8 @@ select.form-control { appearance: none; cursor: pointer; }
 .modal-overlay {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 300;
   display: none;
   align-items: flex-end;
@@ -710,9 +759,10 @@ select.form-control { appearance: none; cursor: pointer; }
   max-height: 90vh;
   overflow-y: auto;
   padding: 20px 16px 32px;
-  animation: slideUp 0.3s ease;
+  animation: modalSlideUp 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.15);
 }
-@keyframes slideUp {
+@keyframes modalSlideUp {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
 }
