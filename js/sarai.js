@@ -335,6 +335,9 @@ async function openSaraiDetail(id) {
       ${booking.status === 'active' ? `<button class="btn btn-primary" onclick="markSaraiCompleted(${id})">&#9989; Mark Completed</button>` : ''}
     </div>
     <div class="btn-row" style="margin-top:10px;">
+      <button class="btn btn-whatsapp" onclick="shareSaraiReceipt(${id})">📲 Share Receipt (PDF)</button>
+    </div>
+    <div class="btn-row" style="margin-top:10px;">
       <button class="btn btn-outline" onclick="navigateTo('sarai')">← Back to List</button>
       ${booking.status === 'active' ? `<button class="btn btn-danger btn-sm" onclick="cancelSaraiBooking(${id})" style="width:auto;flex:0;">Cancel</button>` : ''}
     </div>
@@ -395,4 +398,181 @@ async function addSaraiPayment(id, amount) {
   showToast('✅ Payment added successfully!');
   await loadSaraiData();
   openSaraiDetail(id);
+}
+
+async function shareSaraiReceipt(id) {
+  const booking = await BartanDB.get(BartanDB.STORES.SARAI_BOOKINGS, id);
+  if (!booking) return;
+
+  const mobile = booking.mobile;
+  showToast('⏳ Generating PDF Receipt...');
+
+  try {
+    if (typeof window.jspdf === 'undefined') {
+      showToast('⚠️ jsPDF not loaded.');
+      return;
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a5'
+    });
+
+    const bizName = appSettings.businessName || "Shiv Shakti Bartan Kiraya";
+    const ownerName = appSettings.ownerName || "";
+    const phone = appSettings.phone || "";
+
+    // Header Background
+    doc.setFillColor(230, 81, 0); // Primary Theme Color (#E65100)
+    doc.rect(0, 0, 148, 28, 'F');
+    
+    // Header Text
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text(bizName, 74, 10, { align: "center" });
+    
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    let ownerInfo = [];
+    if (ownerName) ownerInfo.push(`Prop: ${ownerName}`);
+    if (phone) ownerInfo.push(`Mob: ${phone}`);
+    if (ownerInfo.length > 0) {
+      doc.text(ownerInfo.join("  |  "), 74, 16, { align: "center" });
+    }
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("SARAI BOOKING RECEIPT", 74, 23, { align: "center" });
+    
+    // Reset Text Color
+    doc.setTextColor(0, 0, 0);
+    
+    // Outer Border
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(5, 32, 138, 160);
+    
+    // Section: Booking Details
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("Booking Details", 10, 40);
+    doc.setDrawColor(230, 230, 230);
+    doc.line(10, 43, 138, 43);
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    
+    doc.text(`Receipt No:`, 10, 50);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${booking.receiptNo}`, 35, 50);
+    doc.setFont("helvetica", "normal");
+    
+    doc.text(`Customer Name:`, 10, 57);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${booking.customerName}`, 40, 57);
+    doc.setFont("helvetica", "normal");
+    
+    if(booking.mobile) {
+      doc.text(`Mobile:`, 10, 64);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${booking.mobile}`, 25, 64);
+      doc.setFont("helvetica", "normal");
+    }
+    
+    doc.line(10, 70, 138, 70);
+    
+    doc.text(`Booking Date:`, 10, 78);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${formatDate(booking.fromDate)}`, 35, 78);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`Return Date:`, 75, 78);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${formatDate(booking.toDate)}`, 98, 78);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`Total Days:`, 10, 85);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${booking.totalDays}`, 32, 85);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(`Rate per Day:`, 75, 85);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Rs ${booking.ratePerDay}`, 100, 85);
+
+    // Section: Payment Summary
+    doc.setFillColor(245, 245, 245);
+    doc.rect(10, 95, 128, 40, 'F');
+    
+    doc.setFontSize(12);
+    doc.text("Payment Summary", 15, 103);
+    doc.line(15, 106, 133, 106);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Total Amount:`, 15, 114);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Rs ${booking.totalAmount}`, 133, 114, { align: "right" });
+    
+    const paid = booking.totalAmount - booking.pendingAmount;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Amount Paid:`, 15, 121);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(46, 125, 50); // Green
+    doc.text(`Rs ${paid}`, 133, 121, { align: "right" });
+    
+    doc.setTextColor(0, 0, 0); // Reset
+    doc.setFont("helvetica", "bold");
+    doc.text(`Balance Due:`, 15, 128);
+    
+    if (booking.pendingAmount > 0) {
+      doc.setTextColor(198, 40, 40); // Red
+    } else {
+      doc.setTextColor(46, 125, 50); // Green
+    }
+    doc.text(`Rs ${booking.pendingAmount}`, 133, 128, { align: "right" });
+    
+    doc.setTextColor(0, 0, 0); // Reset
+
+    // Footer Message
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "italic");
+    doc.text("Dhanyawad! Booking karne ke liye.", 74, 160, { align: "center" });
+    
+    const pdfBlob = doc.output('blob');
+    const file = new File([pdfBlob], `Sarai_Receipt_${booking.receiptNo}.pdf`, { type: 'application/pdf' });
+    
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: 'Sarai Booking Receipt',
+          text: 'Please find attached your Sarai Booking Receipt.',
+          files: [file]
+        });
+        showToast('✅ PDF Shared Successfully!');
+      } catch (err) {
+        console.error('Share cancelled or failed', err);
+      }
+    } else {
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Sarai_Receipt_${booking.receiptNo}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      showToast('⬇️ PDF Downloaded. Please attach it manually in WhatsApp.');
+      
+      if (mobile) {
+        setTimeout(() => {
+          window.open(`https://wa.me/91${mobile}?text=Dhanyawad ${booking.customerName}! Booking karne ke liye. Please check the downloaded PDF receipt for your Sarai booking.`, '_blank');
+        }, 1000);
+      }
+    }
+  } catch(e) {
+    console.error(e);
+    showToast('⚠️ Failed to generate PDF');
+  }
 }

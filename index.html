@@ -9,8 +9,91 @@
   <meta name="description" content="Shiv Shakti Bartan Kiraya — Utensil Rental Management App" />
   <title>Shiv Shakti Bartan Kiraya</title>
   <link rel="stylesheet" href="css/style.css?v=4" />
+  <style>
+    /* Hide Google Translate Toolbar & Branding */
+    body { top: 0 !important; }
+    .skiptranslate, .goog-te-banner-frame, #google_translate_element { display: none !important; }
+    .goog-te-spinner-pos { display: none !important; }
+    
+    /* Professional Splash Screen */
+    #splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: linear-gradient(135deg, #E65100, #FF9800); /* Premium Orange Gradient */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 999999;
+      transition: opacity 0.6s ease-out, visibility 0.6s ease-out;
+      color: white;
+      font-family: 'Inter', sans-serif;
+    }
+    .splash-logo {
+      font-size: 5rem;
+      animation: bounce 1.5s infinite ease-in-out;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+    }
+    .splash-title {
+      margin-top: 20px;
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .splash-subtitle {
+      font-size: 1.1rem;
+      font-weight: 500;
+      opacity: 0.9;
+      margin-top: 5px;
+    }
+    .splash-loader {
+      margin-top: 40px;
+      width: 180px;
+      height: 6px;
+      background-color: rgba(255,255,255,0.3);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+    .splash-loader::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; height: 100%;
+      width: 40%;
+      background-color: white;
+      border-radius: 10px;
+      animation: slide 1.2s infinite alternate ease-in-out;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px) scale(1.05); }
+    }
+    @keyframes slide {
+      0% { transform: translateX(-20%); }
+      100% { transform: translateX(180%); }
+    }
+    .splash-hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+  </style>
 </head>
 <body>
+
+  <!-- Splash Screen -->
+  <div id="splash-screen">
+    <div class="splash-logo">🪣</div>
+    <div class="splash-title">Shiv Shakti</div>
+    <div class="splash-subtitle">Bartan Kiraya App</div>
+    <div class="splash-loader"></div>
+  </div>
+
+  <!-- Hidden Google Translate Element -->
+  <div id="google_translate_element"></div>
 
   <!-- ===== TOP HEADER ===== -->
   <header class="app-header">
@@ -22,7 +105,7 @@
       </div>
     </div>
     <div class="header-actions">
-      <button class="header-icon" id="headerActionBtn" title="Alerts">⚠️</button>
+      <button class="header-icon" onclick="openLanguageModal()" title="Change Language">अ/A</button>
       <button class="header-icon" onclick="navigateTo('settings')" title="Settings">⚙️</button>
     </div>
   </header>
@@ -523,16 +606,30 @@
   <div class="toast" id="toast"></div>
 
   <!-- ===== SCRIPTS ===== -->
-  <script src="js/db.js?v=12"></script>
-  <script src="js/inventory.js?v=12"></script>
-  <script src="js/booking.js?v=12"></script>
-  <script src="js/payment.js?v=12"></script>
-  <script src="js/report.js?v=12"></script>
-  <script src="js/reminder.js?v=12"></script>
-  <script src="js/sarai.js?v=12"></script>
+  <script src="js/db.js?v=24"></script>
+  <script src="js/inventory.js?v=24"></script>
+  <script src="js/booking.js?v=24"></script>
+  <script src="js/payment.js?v=24"></script>
+  <script src="js/report.js?v=24"></script>
+  <script src="js/reminder.js?v=24"></script>
+  <script src="js/sarai.js?v=24"></script>
   <!-- Library for capturing Bill as image -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="js/app.js?v=12"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
+  <!-- Google Translate Setup -->
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({
+        pageLanguage: 'en',
+        includedLanguages: 'hi,en,gu,mr,pa,bn,ta,te,kn,ml',
+        autoDisplay: false
+      }, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+  <script src="js/app.js?v=24"></script>
 
 </body>
 </html>

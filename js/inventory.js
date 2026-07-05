@@ -52,6 +52,12 @@ async function loadInventoryPage() {
         </div>
       </div>`;
   }).join('');
+  
+  container.innerHTML += `
+    <div style="margin: 24px 16px; padding-bottom: 20px;">
+      <button class="btn btn-primary" style="width:100%; border-radius:12px; padding:14px; font-weight:bold; font-size:1.05rem;" onclick="openAddInventoryModal()">➕ Add New Bartan</button>
+    </div>
+  `;
 }
 
 // ============================================
@@ -134,5 +140,79 @@ async function saveInventoryItem(invId) {
   await BartanDB.put(BartanDB.STORES.INVENTORY, item);
   closeInvModal();
   showToast('✅ Bartan updated!');
+  await loadInventoryPage();
+}
+
+// ============================================
+// Add New Bartan Modal
+// ============================================
+function openAddInventoryModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.id = 'inv-add-modal';
+  overlay.innerHTML = `
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">➕ Add New Bartan</div>
+
+      <div class="form-group">
+        <label class="form-label">Bartan Name *</label>
+        <input type="text" class="form-control" id="add-inv-name" placeholder="e.g. Kadai, Jug, etc." />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Total Stock (How many you own)</label>
+        <input type="number" class="form-control" id="add-inv-total" value="0" min="0" inputmode="numeric" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Rate Per Day (₹ per piece)</label>
+        <input type="number" class="form-control" id="add-inv-rate" value="0" min="0" inputmode="numeric" />
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-outline" onclick="closeAddInvModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveNewInventoryItem()">💾 Add Bartan</button>
+      </div>
+    </div>`;
+
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeAddInvModal();
+  });
+  document.body.appendChild(overlay);
+}
+
+function closeAddInvModal() {
+  const modal = document.getElementById('inv-add-modal');
+  if (modal) modal.remove();
+}
+
+async function saveNewInventoryItem() {
+  const name = document.getElementById('add-inv-name').value.trim();
+  const total = parseInt(document.getElementById('add-inv-total').value) || 0;
+  const rate = parseFloat(document.getElementById('add-inv-rate').value) || 0;
+
+  if (!name) {
+    showToast('⚠️ Please enter a bartan name!');
+    return;
+  }
+
+  // Check if already exists
+  const existing = await BartanDB.getAll(BartanDB.STORES.INVENTORY);
+  if (existing.find(i => i.name.toLowerCase() === name.toLowerCase())) {
+    showToast('⚠️ This bartan name already exists!');
+    return;
+  }
+
+  await BartanDB.add(BartanDB.STORES.INVENTORY, {
+    name: name,
+    totalStock: total,
+    availableStock: total, // new items start fully available
+    ratePerDay: rate,
+    missingCount: 0
+  });
+
+  closeAddInvModal();
+  showToast('✅ New Bartan Added!');
   await loadInventoryPage();
 }

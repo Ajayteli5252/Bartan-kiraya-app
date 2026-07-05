@@ -99,14 +99,16 @@ async function loadDashboard() {
   // Overdue badge on header
   const overdueCount = activeBookings.filter(b => isOverdue(b)).length;
   const headerBtn    = document.getElementById('headerActionBtn');
-  if (overdueCount > 0) {
-    headerBtn.innerHTML = `⚠️<span class="header-badge">${overdueCount}</span>`;
-    headerBtn.title     = `${overdueCount} overdue booking(s)`;
-    headerBtn.onclick   = () => checkDueDateAlerts(true);
-  } else {
-    headerBtn.innerHTML = '✅';
-    headerBtn.title     = 'No overdue bookings';
-    headerBtn.onclick   = null;
+  if (headerBtn) {
+    if (overdueCount > 0) {
+      headerBtn.innerHTML = `⚠️<span class="header-badge">${overdueCount}</span>`;
+      headerBtn.title     = `${overdueCount} overdue booking(s)`;
+      headerBtn.onclick   = () => checkDueDateAlerts(true);
+    } else {
+      headerBtn.innerHTML = '✅';
+      headerBtn.title     = 'No overdue bookings';
+      headerBtn.onclick   = null;
+    }
   }
 
   // ----- Inventory summary table -----
@@ -769,6 +771,7 @@ async function printBookingBill(bookingId) {
     <div class="print-bill-sheet" id="print-bill-div">
       <div class="print-bill-header">
         <div class="print-bill-title">🪣 ${bizName}</div>
+        ${appSettings.ownerName || appSettings.phone ? `<div class="print-bill-sub">Prop: ${appSettings.ownerName || '-'} | Mob: ${appSettings.phone || '-'}</div>` : ''}
         ${bizAddr ? `<div class="print-bill-sub">${bizAddr}</div>` : ''}
         <div class="print-bill-sub" style="margin-top:4px;">RENTAL BILL / RECEIPT</div>
       </div>
@@ -806,13 +809,13 @@ async function printBookingBill(bookingId) {
       </div>
 
       <div class="print-bill-footer">
-        ${appSettings.waFooter || 'Thank you for your business! 🙏'}<br/>
+        ${appSettings.waFooter || 'Dhanyawad! Booking karne ke liye.'}<br/>
         ${bizName}
       </div>
     </div>
     <div class="btn-row no-print" style="margin:8px 0;">
       <button class="btn btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
-      ${mobile ? `<button class="btn btn-whatsapp" onclick="shareBillImage(${bookingId}, '${mobile}')">📲 Share Bill</button>` : `<button class="btn btn-whatsapp" onclick="shareBillImage(${bookingId}, '')">📲 Share Bill</button>`}
+      ${mobile ? `<button class="btn btn-whatsapp" onclick="shareBillPDF(${bookingId}, '${mobile}')">📲 Share Bill (PDF)</button>` : `<button class="btn btn-whatsapp" onclick="shareBillPDF(${bookingId}, '')">📲 Share Bill (PDF)</button>`}
     </div>
     <div class="btn-row no-print" style="margin-top:8px;">
       <button class="btn btn-outline" onclick="closePrintModal()">Close</button>
@@ -833,64 +836,225 @@ async function printBookingBill(bookingId) {
   document.body.appendChild(overlay);
 }
 
-async function shareBillImage(bookingId, mobile) {
-  const billDiv = document.getElementById('print-bill-div');
-  if (!billDiv) return;
+async function shareBillPDF(bookingId, mobile) {
+  const booking = await BartanDB.get(BartanDB.STORES.BOOKINGS, bookingId);
+  if (!booking) return;
 
-  showToast('⏳ Generating Bill Image...');
-  
+  const customer = booking.customerId ? await BartanDB.get(BartanDB.STORES.CUSTOMERS, booking.customerId) : null;
+  const custName = customer?.name || booking.customerName || 'Customer';
+
+  showToast('⏳ Generating PDF Receipt...');
+
   try {
-    if (typeof html2canvas === 'undefined') {
-      showToast('⚠️ html2canvas not loaded. Sending text message instead.');
-      sendCurrentBookingWhatsApp();
+    if (typeof window.jspdf === 'undefined') {
+      showToast('⚠️ jsPDF not loaded.');
       return;
     }
     
-    // Make sure bill is fully visible before capturing
-    const canvas = await html2canvas(billDiv, { 
-      scale: 2, 
-      useCORS: true,
-      backgroundColor: '#ffffff'
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
     });
+
+    const bizName = appSettings.businessName || "Shiv Shakti Bartan Kiraya";
+    const ownerName = appSettings.ownerName || "";
+    const phone = appSettings.phone || "";
+
+    // Header Background
+    doc.setFillColor(230, 81, 0); // Primary Theme Color (#E65100)
+    doc.rect(0, 0, 210, 32, 'F');
     
-    canvas.toBlob(async (blob) => {
-      const file = new File([blob], `Bill_${bookingId}.png`, { type: 'image/png' });
-      
-      // Try Web Share API first (Native sharing menu on Android/iOS/Windows)
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            title: 'Bartan Kiraya Bill',
-            text: 'Please find attached your bill.',
-            files: [file]
-          });
-          showToast('✅ Bill Shared Successfully!');
-        } catch (err) {
-          console.error('Share cancelled or failed', err);
-        }
-      } else {
-        // Fallback: If device doesn't support file sharing, just download the image 
-        // so user can attach it manually to WhatsApp.
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Bill_${bookingId}.png`;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        showToast('⬇️ Image Downloaded. Please attach it manually in WhatsApp.');
-        
-        // Open whatsapp chat anyway
-        if (mobile) {
-          setTimeout(() => {
-            window.open(`https://wa.me/91${mobile}?text=Please check the downloaded bill image.`, '_blank');
-          }, 1000);
-        }
+    // Header Text
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text(bizName, 105, 12, { align: "center" });
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    let ownerInfo = [];
+    if (ownerName) ownerInfo.push(`Prop: ${ownerName}`);
+    if (phone) ownerInfo.push(`Mob: ${phone}`);
+    if (ownerInfo.length > 0) {
+      doc.text(ownerInfo.join("  |  "), 105, 19, { align: "center" });
+    }
+
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text("BARTAN BOOKING RECEIPT", 105, 27, { align: "center" });
+    
+    // Reset Text Color
+    doc.setTextColor(0, 0, 0);
+    
+    // Outer Border
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(10, 36, 190, 250);
+    
+    // Section: Booking Details
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("Booking Details", 15, 45);
+    doc.setDrawColor(230, 230, 230);
+    doc.line(15, 48, 195, 48);
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    
+    doc.text(`Receipt No:`, 15, 56);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${booking.receiptNo}`, 45, 56);
+    doc.setFont("helvetica", "normal");
+    
+    doc.text(`Customer Name:`, 15, 64);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${custName}`, 48, 64);
+    doc.setFont("helvetica", "normal");
+    
+    if (mobile) {
+      doc.text(`Mobile:`, 15, 72);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${mobile}`, 32, 72);
+      doc.setFont("helvetica", "normal");
+    }
+    
+    doc.text(`Booking Date:`, 110, 56);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${formatDate(booking.bookingDate)}`, 140, 56);
+    doc.setFont("helvetica", "normal");
+    
+    doc.text(`Return Date:`, 110, 64);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${formatDate(booking.returnDate)}`, 135, 64);
+    doc.setFont("helvetica", "normal");
+    
+    doc.text(`Total Days:`, 110, 72);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${booking.totalDays}`, 133, 72);
+
+    doc.line(15, 80, 195, 80);
+    
+    // Items Table Header
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setFillColor(240, 240, 240);
+    doc.rect(15, 85, 180, 10, 'F');
+    doc.text("Bartan Item", 18, 92);
+    doc.text("Qty", 90, 92);
+    doc.text("Rate/Day", 115, 92);
+    doc.text("Days", 145, 92);
+    doc.text("Amount", 185, 92, { align: "right" });
+    
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    let yPos = 102;
+    for (const item of (booking.items || [])) {
+      if (item.nag > 0) {
+        doc.text(item.name, 18, yPos);
+        doc.text(String(item.nag), 90, yPos);
+        doc.text(`Rs ${item.ratePerDay}`, 115, yPos);
+        doc.text(String(booking.totalDays), 145, yPos);
+        doc.text(`Rs ${item.rakam}`, 185, yPos, { align: "right" });
+        yPos += 8;
       }
-    }, 'image/png');
+    }
+    
+    doc.line(15, yPos + 2, 195, yPos + 2);
+    yPos += 12;
+
+    // Payment Box
+    doc.setFillColor(245, 245, 245);
+    doc.rect(15, yPos, 180, 45, 'F');
+    
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Payment Summary", 20, yPos + 8);
+    doc.line(20, yPos + 12, 190, yPos + 12);
+    
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    
+    let currentY = yPos + 20;
+    
+    const subtotal = booking.totalAmount - (booking.penalty || 0);
+    doc.text(`Subtotal:`, 20, currentY);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Rs ${subtotal}`, 190, currentY, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    
+    if ((booking.penalty || 0) > 0) {
+      currentY += 8;
+      doc.text(`Penalty Added:`, 20, currentY);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(198, 40, 40);
+      doc.text(`Rs ${booking.penalty}`, 190, currentY, { align: "right" });
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "normal");
+    }
+
+    currentY += 8;
+    doc.text(`Total Amount:`, 20, currentY);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Rs ${booking.totalAmount}`, 190, currentY, { align: "right" });
+    doc.setFont("helvetica", "normal");
+
+    const paidAmount = (booking.totalAmount || 0) - (booking.pendingAmount || 0);
+    currentY += 8;
+    doc.text(`Amount Paid:`, 20, currentY);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(46, 125, 50); // Green
+    doc.text(`Rs ${paidAmount}`, 190, currentY, { align: "right" });
+    doc.setTextColor(0, 0, 0);
+    
+    currentY += 8;
+    doc.text(`Balance Due:`, 20, currentY);
+    if (booking.pendingAmount > 0) {
+      doc.setTextColor(198, 40, 40); // Red
+    } else {
+      doc.setTextColor(46, 125, 50); // Green
+    }
+    doc.text(`Rs ${booking.pendingAmount}`, 190, currentY, { align: "right" });
+    doc.setTextColor(0, 0, 0);
+
+    // Footer Message
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "italic");
+    doc.text("Dhanyawad! Booking karne ke liye.", 105, 275, { align: "center" });
+    
+    const pdfBlob = doc.output('blob');
+    const file = new File([pdfBlob], `Bartan_Receipt_${booking.receiptNo}.pdf`, { type: 'application/pdf' });
+    
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: 'Bartan Booking Receipt',
+          text: 'Please find attached your Bartan Booking Receipt.',
+          files: [file]
+        });
+        showToast('✅ PDF Shared Successfully!');
+      } catch (err) {
+        console.error('Share cancelled or failed', err);
+      }
+    } else {
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Bartan_Receipt_${booking.receiptNo}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      showToast('⬇️ PDF Downloaded. Please attach it manually in WhatsApp.');
+      
+      if (mobile) {
+        setTimeout(() => {
+          window.open(`https://wa.me/91${mobile}?text=Dhanyawad ${custName}! Booking karne ke liye. Please check the downloaded PDF receipt for your Bartan booking.`, '_blank');
+        }, 1000);
+      }
+    }
   } catch(e) {
     console.error(e);
-    showToast('⚠️ Failed to generate bill image');
+    showToast('⚠️ Failed to generate PDF');
   }
 }
 
@@ -911,32 +1075,52 @@ async function openReturnModal(bookingId) {
 
   const overdue     = isOverdue(booking);
   const overdueDays = getOverdueDays(booking);
-  const items       = (booking.items || []).filter(i => i.nag > 0);
+  // Only show items that are not fully returned
+  const pendingItems = (booking.items || []).filter(i => i.nag - (i.returnedQty || 0) > 0);
+  if (pendingItems.length === 0) {
+    showToast('✅ All items already returned!');
+    return;
+  }
 
   // Default penalty values from settings
   const defaultDamagePenalty  = parseInt(appSettings.damagePenalty)  || 0;
   const defaultMissingPenalty = parseInt(appSettings.missingPenalty) || 0;
 
   let itemRows = '';
-  items.forEach((item, idx) => {
-    const itemValue = item.rakam || (item.nag * item.ratePerDay * booking.totalDays);
+  pendingItems.forEach((item, idx) => {
+    const totalBooked = item.nag;
+    const returned = item.returnedQty || 0;
+    const pending = totalBooked - returned;
+    
     itemRows += `
       <div class="ret-item-row" id="ret-row-${idx}">
         <div class="ret-item-info">
-          <div class="ret-item-name">${item.name}</div>
-          <div class="ret-item-qty">${item.nag} pcs &nbsp;|&nbsp; ₹${item.ratePerDay}/day &nbsp;|&nbsp; Total: ₹${itemValue}</div>
-        </div>
-        <div class="ret-item-controls">
-          <select class="ret-status-select" id="ret-status-${idx}" onchange="togglePenaltyInput(${idx}, ${defaultDamagePenalty}, ${defaultMissingPenalty})">
-            <option value="ok">✅ All Good</option>
-            <option value="damaged">🔨 Damaged</option>
-            <option value="missing">❌ Missing</option>
-          </select>
-          <div class="ret-penalty-box" id="ret-penalty-box-${idx}" style="display:none;">
-            <label style="font-size:0.75rem;color:var(--danger);font-weight:600;">Penalty (₹)</label>
-            <input type="number" class="form-control ret-penalty-input" id="ret-penalty-${idx}"
-              placeholder="0" min="0" oninput="updateReturnTotal()" />
+          <div class="ret-item-name" style="font-weight:bold;">${item.name}</div>
+          <div class="ret-item-qty" style="color:var(--text-secondary);font-size:0.8rem;">
+            Booked: ${totalBooked} | Returned: <span style="color:var(--success);font-weight:600;">${returned}</span> | Pending: <span style="color:var(--danger);font-weight:600;">${pending}</span>
           </div>
+        </div>
+        
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:100px;">
+            <label style="font-size:0.75rem;font-weight:600;color:var(--text-main);">Returning Now</label>
+            <input type="number" class="form-control" id="ret-qty-${idx}" 
+              value="${pending}" min="0" max="${pending}" oninput="validateReturnQty(${idx}, ${pending})" style="padding:4px 8px;font-weight:bold;" />
+          </div>
+          <div style="flex:1;min-width:120px;">
+            <label style="font-size:0.75rem;font-weight:600;color:var(--text-main);">Status</label>
+            <select class="ret-status-select" id="ret-status-${idx}" onchange="togglePenaltyInput(${idx}, ${defaultDamagePenalty}, ${defaultMissingPenalty})" style="padding:4px 8px;margin-top:0;">
+              <option value="ok">✅ All Good</option>
+              <option value="damaged">🔨 Damaged</option>
+              <option value="missing">❌ Missing</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="ret-penalty-box" id="ret-penalty-box-${idx}" style="display:none;margin-top:8px;">
+          <label style="font-size:0.75rem;color:var(--danger);font-weight:600;">Penalty Amount (₹) for these items</label>
+          <input type="number" class="form-control ret-penalty-input" id="ret-penalty-${idx}"
+            placeholder="0" min="0" oninput="updateReturnTotal()" />
         </div>
       </div>`;
   });
@@ -944,7 +1128,10 @@ async function openReturnModal(bookingId) {
   // Overdue section
   let overdueSection = '';
   if (overdue) {
-    const dailyTotal = items.reduce((s, i) => s + (i.nag * i.ratePerDay), 0);
+    const dailyTotal = pendingItems.reduce((s, i) => {
+      const pending = i.nag - (i.returnedQty || 0);
+      return s + (pending * i.ratePerDay);
+    }, 0);
     const penPct     = parseInt(appSettings.penaltyPct) || 100;
     const suggested  = Math.round(dailyTotal * overdueDays * penPct / 100);
     overdueSection = `
@@ -1014,11 +1201,20 @@ function togglePenaltyInput(idx, defaultDamage = 0, defaultMissing = 0) {
   if (box) box.style.display = (status !== 'ok') ? 'block' : 'none';
   const inp = document.getElementById('ret-penalty-' + idx);
   if (inp) {
-    if (status === 'ok')      inp.value = '';
     if (status === 'damaged') inp.value = defaultDamage  || '';
-    if (status === 'missing') inp.value = defaultMissing || '';
+    else if (status === 'missing') inp.value = defaultMissing || '';
+    else inp.value = '';
   }
   updateReturnTotal();
+}
+
+function validateReturnQty(idx, max) {
+  const inp = document.getElementById('ret-qty-' + idx);
+  if (inp) {
+    let val = parseInt(inp.value);
+    if (isNaN(val) || val < 0) inp.value = 0;
+    if (val > max) inp.value = max;
+  }
 }
 
 function updateReturnTotal() {
@@ -1035,60 +1231,92 @@ function updateReturnTotal() {
 
 async function confirmReturnWithPenalty(bookingId) {
   const booking = await BartanDB.get(BartanDB.STORES.BOOKINGS, bookingId);
-  const items   = (booking.items || []).filter(i => i.nag > 0);
+  const pendingItems = (booking.items || []).filter(i => i.nag - (i.returnedQty || 0) > 0);
 
-  const penaltyDetails = [];
-  items.forEach((item, idx) => {
-    const status  = document.getElementById('ret-status-' + idx)?.value || 'ok';
-    const penalty = parseFloat(document.getElementById('ret-penalty-' + idx)?.value) || 0;
-    if (status !== 'ok') {
-      penaltyDetails.push({ itemName: item.name, type: status, amount: penalty });
-      // Update inventory missing count
-      if (status === 'missing' && item.inventoryId) {
-        BartanDB.get(BartanDB.STORES.INVENTORY, item.inventoryId).then(inv => {
+  const newPenaltyDetails = [];
+  let isFullyReturned = true; // Assume true, verify later
+  let hasValidReturn = false; 
+  
+  // Using traditional for loop to allow async inventory updates
+  for (let idx = 0; idx < pendingItems.length; idx++) {
+    const item = pendingItems[idx];
+    const qtyInput = document.getElementById('ret-qty-' + idx);
+    let returningNow = 0;
+    if (qtyInput) {
+       returningNow = parseInt(qtyInput.value) || 0;
+       const maxPending = item.nag - (item.returnedQty || 0);
+       if (returningNow > maxPending) returningNow = maxPending;
+    }
+    
+    if (returningNow > 0) {
+      hasValidReturn = true;
+      item.returnedQty = (item.returnedQty || 0) + returningNow;
+      
+      const status  = document.getElementById('ret-status-' + idx)?.value || 'ok';
+      const penalty = parseFloat(document.getElementById('ret-penalty-' + idx)?.value) || 0;
+      
+      if (status !== 'ok') {
+        newPenaltyDetails.push({ itemName: `${item.name} (${returningNow}pcs)`, type: status, amount: penalty });
+        // Update inventory missing count
+        if (status === 'missing' && item.inventoryId) {
+          const inv = await BartanDB.get(BartanDB.STORES.INVENTORY, item.inventoryId);
           if (inv) {
-            inv.missingCount = (inv.missingCount || 0) + item.nag;
-            BartanDB.put(BartanDB.STORES.INVENTORY, inv);
+            inv.missingCount = (inv.missingCount || 0) + returningNow;
+            await BartanDB.put(BartanDB.STORES.INVENTORY, inv);
           }
-        });
+        }
+      }
+      
+      // Restore inventory available stock ONLY if not missing
+      if (status !== 'missing' && item.inventoryId) {
+        const inv = await BartanDB.get(BartanDB.STORES.INVENTORY, item.inventoryId);
+        if (inv) {
+          inv.availableStock = (inv.availableStock || 0) + returningNow;
+          await BartanDB.put(BartanDB.STORES.INVENTORY, inv);
+        }
       }
     }
-  });
-
-  const overduePenalty = parseFloat(document.getElementById('ret-overdue-penalty')?.value) || 0;
-  const overdueDays    = getOverdueDays(booking);
-  const totalPenalty   = penaltyDetails.reduce((s, p) => s + p.amount, 0) + overduePenalty;
-
-  booking.status       = 'returned';
-  booking.returnedAt   = new Date().toISOString();
-  booking.penalty      = totalPenalty;
-  booking.penaltyDetails  = penaltyDetails;
-  booking.overduePenalty  = overduePenalty;
-  booking.overdueDays     = overdueDays;
-
-  if (totalPenalty > 0) {
-    booking.pendingAmount = (booking.pendingAmount || 0) + totalPenalty;
-    booking.totalAmount   = (booking.totalAmount   || 0) + totalPenalty;
   }
 
-  // Restore inventory available stock
+  // Check if ALL items in booking are now fully returned
   for (const item of (booking.items || [])) {
-    if (item.nag > 0 && item.inventoryId) {
-      const inv = await BartanDB.get(BartanDB.STORES.INVENTORY, item.inventoryId);
-      if (inv) {
-        inv.availableStock = (inv.availableStock || 0) + item.nag;
-        await BartanDB.put(BartanDB.STORES.INVENTORY, inv);
-      }
+    if (item.nag > 0 && item.nag - (item.returnedQty || 0) > 0) {
+      isFullyReturned = false;
+      break;
     }
+  }
+
+  const overduePenalty = parseFloat(document.getElementById('ret-overdue-penalty')?.value) || 0;
+  const overdueDays    = getOverdueDays(booking); // calculate once
+  const currentPenalty = newPenaltyDetails.reduce((s, p) => s + p.amount, 0) + overduePenalty;
+
+  // Append new penalties to existing ones
+  booking.penalty = (booking.penalty || 0) + currentPenalty;
+  booking.penaltyDetails = (booking.penaltyDetails || []).concat(newPenaltyDetails);
+  booking.overduePenalty = (booking.overduePenalty || 0) + overduePenalty;
+  // keep highest overdueDays recorded
+  booking.overdueDays = Math.max((booking.overdueDays || 0), overdueDays);
+
+  if (currentPenalty > 0) {
+    booking.pendingAmount = (booking.pendingAmount || 0) + currentPenalty;
+    booking.totalAmount   = (booking.totalAmount   || 0) + currentPenalty;
+  }
+
+  if (isFullyReturned) {
+    booking.status       = 'returned';
+    booking.returnedAt   = new Date().toISOString();
   }
 
   await BartanDB.put(BartanDB.STORES.BOOKINGS, booking);
   closeReturnModal();
 
-  const msg = totalPenalty > 0
-    ? ` Penalty: \u20B9${totalPenalty} added!`
-    : '';
-  showToast('\u2705 Bartan returned!' + msg);
+  const penMsg = currentPenalty > 0 ? ` Penalty: \u20B9${currentPenalty} added!` : '';
+  if (isFullyReturned) {
+    showToast('\u2705 All Bartan completely returned!' + penMsg);
+  } else {
+    showToast(hasValidReturn ? `\u2705 Partial return processed!${penMsg}` : `No items returned.`);
+  }
+  
   openBookingDetail(bookingId);
 }
 
@@ -1110,9 +1338,16 @@ function confirmDeleteBooking(bookingId) {
 // ============================================
 // PAYMENT MODAL
 // ============================================
-function openPaymentModal(bookingId) {
+async function openPaymentModal(bookingId) {
   const existing = document.getElementById('payment-modal');
   if (existing) existing.remove();
+
+  const booking = await BartanDB.get(BartanDB.STORES.BOOKINGS, bookingId);
+  if (!booking) return;
+
+  const total = booking.totalAmount || 0;
+  const pending = booking.pendingAmount || 0;
+  const paid = total - pending;
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay open';
@@ -1121,11 +1356,26 @@ function openPaymentModal(bookingId) {
     <div class="modal-sheet">
       <div class="modal-handle"></div>
       <div class="modal-title">💰 Record Payment</div>
+      
+      <div style="background:var(--bg-card); padding:10px; border-radius:8px; margin-bottom:15px; font-size:0.85rem;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span style="color:var(--text-secondary);">Total Bill:</span>
+          <span style="font-weight:bold;">₹${total}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span style="color:var(--success);">Amount Paid:</span>
+          <span style="font-weight:bold; color:var(--success);">₹${paid}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-top:1px dashed var(--border); padding-top:4px; margin-top:4px;">
+          <span style="color:var(--danger); font-weight:bold;">Pending:</span>
+          <span style="font-weight:bold; color:var(--danger);">₹${pending}</span>
+        </div>
+      </div>
 
       <div class="form-group">
-        <label class="form-label">Amount (₹)</label>
+        <label class="form-label" style="font-weight:600;">Amount Receiving Now (₹)</label>
         <input type="number" class="form-control" id="pay-amount"
-          placeholder="How much received?" min="1" inputmode="numeric" />
+          value="${pending}" min="1" max="${pending}" inputmode="numeric" style="font-size:1.1rem; font-weight:bold; padding:8px;" />
       </div>
 
       <div class="form-group">
@@ -1651,6 +1901,76 @@ function formatItemsSummary(items) {
 }
 
 // ============================================
+// LANGUAGE MODAL & TRANSLATION
+// ============================================
+function openLanguageModal() {
+  const existing = document.getElementById('lang-modal');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay open';
+  overlay.id = 'lang-modal';
+  
+  // List of supported Indian languages
+  const langs = [
+    { code: 'en', name: 'English', native: 'English' },
+    { code: 'hi', name: 'Hindi', native: 'हिंदी' },
+    { code: 'gu', name: 'Gujarati', native: 'ગુજરાતી' },
+    { code: 'mr', name: 'Marathi', native: 'मराठी' },
+    { code: 'pa', name: 'Punjabi', native: 'ਪੰਜਾਬੀ' },
+    { code: 'bn', name: 'Bengali', native: 'বাংলা' },
+    { code: 'ta', name: 'Tamil', native: 'தமிழ்' },
+    { code: 'te', name: 'Telugu', native: 'తెలుగు' },
+    { code: 'kn', name: 'Kannada', native: 'ಕನ್ನಡ' },
+    { code: 'ml', name: 'Malayalam', native: 'മലയാളം' }
+  ];
+  
+  let buttonsHtml = '';
+  langs.forEach(l => {
+    buttonsHtml += `
+      <button class="btn btn-outline" style="width:100%; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;" onclick="changeLanguage('${l.code}')">
+        <span style="font-size:1.1rem; font-weight:bold;">${l.native}</span>
+        <span style="font-size:0.85rem; color:var(--text-secondary);">${l.name}</span>
+      </button>
+    `;
+  });
+
+  overlay.innerHTML = `
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">🌐 Select Language</div>
+      <div style="max-height: 60vh; overflow-y: auto; padding-right: 4px;">
+        ${buttonsHtml}
+      </div>
+      <div class="btn-row" style="margin-top: 10px;">
+        <button class="btn btn-outline" onclick="closeLanguageModal()">Cancel</button>
+      </div>
+    </div>`;
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeLanguageModal(); });
+  document.body.appendChild(overlay);
+}
+
+function closeLanguageModal() {
+  const m = document.getElementById('lang-modal');
+  if (m) m.remove();
+}
+
+function changeLanguage(langCode) {
+  const select = document.querySelector('select.goog-te-combo');
+  if (select) {
+    select.value = langCode;
+    select.dispatchEvent(new Event('change'));
+    showToast('🌐 Language Updated!');
+  } else {
+    showToast('⏳ Loading languages, please wait...');
+    setTimeout(() => changeLanguage(langCode), 1000);
+    return;
+  }
+  closeLanguageModal();
+}
+
+// ============================================
 // APP STARTUP
 // ============================================
 async function startApp() {
@@ -1675,10 +1995,34 @@ async function startApp() {
     // Due date check on open
     setTimeout(() => checkDueDateAlerts(false), 1500);
 
+    // Splash screen logic
+    const hideSplash = () => {
+      const splash = document.getElementById('splash-screen');
+      if (splash) {
+        splash.classList.add('splash-hidden');
+        setTimeout(() => splash.remove(), 600);
+      }
+    };
+
+    if (document.readyState === 'complete') {
+      setTimeout(hideSplash, 600);
+    } else {
+      window.addEventListener('load', () => setTimeout(hideSplash, 600));
+      // Fallback just in case load event takes too long or fails
+      setTimeout(hideSplash, 3000); 
+    }
+
     console.log('✅ Bartan Kiraya App v4 started!');
   } catch (err) {
     console.error('❌ App start failed:', err);
     showToast('❌ App failed to start!');
+    
+    // Hide splash screen even on error so user can see what's wrong
+    const splash = document.getElementById('splash-screen');
+    if (splash) {
+      splash.classList.add('splash-hidden');
+      setTimeout(() => splash.remove(), 600);
+    }
   }
 }
 
