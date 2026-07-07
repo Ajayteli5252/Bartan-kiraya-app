@@ -93,6 +93,54 @@
       opacity: 0;
       visibility: hidden;
     }
+    
+    /* Professional Onboarding Button */
+    .btn-onboarding {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(90deg, #E65100, #FFA726, #E65100);
+      background-size: 200% auto;
+      color: white;
+      font-weight: 800;
+      font-size: 1.15rem;
+      padding: 16px 24px;
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 6px 20px rgba(230, 81, 0, 0.4);
+      animation: gradientShift 3s infinite linear;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 15px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn-onboarding::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%; width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      transform: skewX(-20deg);
+      animation: shineSweep 3s infinite;
+    }
+    .btn-onboarding:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(230, 81, 0, 0.5);
+    }
+    .btn-onboarding:active {
+      transform: translateY(1px);
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+    @keyframes shineSweep {
+      0% { left: -100%; }
+      15% { left: 200%; }
+      100% { left: 200%; }
+    }
   </style>
 </head>
 <body>
@@ -129,7 +177,10 @@
         <label class="form-label">Address (Optional)</label>
         <input type="text" class="form-control" id="ob-address" placeholder="e.g. Main Market, Jaipur" />
       </div>
-      <button class="btn btn-primary" onclick="completeOnboarding()" style="margin-top:10px;">🚀 Start Using App</button>
+      <button class="btn-onboarding" onclick="completeOnboarding()">
+        <span style="font-size: 1.4rem; animation: bounce 2s infinite;">🚀</span> 
+        <span>Let's Start!</span>
+      </button>
     </div>
   </div>
 

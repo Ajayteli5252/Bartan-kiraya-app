@@ -2057,7 +2057,9 @@ async function completeOnboarding() {
   };
 
   appSettings = { ...appSettings, ...settings };
-  await BartanDB.saveSettings(appSettings);
+  for (const [key, value] of Object.entries(settings)) {
+    await BartanDB.setSetting(key, value);
+  }
 
   const nameEl = document.getElementById('appBusinessName');
   if (nameEl) nameEl.textContent = bName;
