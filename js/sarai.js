@@ -422,7 +422,7 @@ async function shareSaraiReceipt(id) {
       format: 'a5'
     });
 
-    const bizName = appSettings.businessName || "Shiv Shakti Bartan Kiraya";
+    const bizName = appSettings.businessName || "UtsavRentals";
     const ownerName = appSettings.ownerName || "";
     const phone = appSettings.phone || "";
 

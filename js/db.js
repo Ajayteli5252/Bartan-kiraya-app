@@ -1,5 +1,5 @@
 // ============================================
-// db.js — IndexedDB Database for Bartan Kiraya App v4
+// db.js — IndexedDB Database for UtsavRentals v4
 // ============================================
 
 const DB_NAME    = "BartanKirayaDB";

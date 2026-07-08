@@ -1,6 +1,6 @@
 {
-  "name": "Easy Rent Manager",
-  "short_name": "Easy Rent",
+  "name": "UtsavRentals",
+  "short_name": "UtsavRentals",
   "description": "Utensil and Event Rental Management App",
   "start_url": "index.html",
   "display": "standalone",

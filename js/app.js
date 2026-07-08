@@ -59,7 +59,7 @@ function navigateTo(page, direction = null) {
   const config = PAGE_CONFIG[page];
   if (config) {
     document.querySelector('.header-text > div:first-child').textContent =
-      appSettings.businessName || 'Shiv Shakti Bartan Kiraya';
+      appSettings.businessName || 'UtsavRentals';
 
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (config.nav) {
@@ -769,7 +769,7 @@ async function printBookingBill(bookingId) {
   const customer = booking.customerId
     ? await BartanDB.get(BartanDB.STORES.CUSTOMERS, booking.customerId) : null;
 
-  const bizName = appSettings.businessName || 'Shiv Shakti Bartan Kiraya';
+  const bizName = appSettings.businessName || 'UtsavRentals';
   const bizAddr = appSettings.address      || '';
   const mobile  = customer?.mobile || booking.mobile || '';
   const paid    = (booking.totalAmount || 0) - (booking.pendingAmount || 0);
@@ -883,7 +883,7 @@ async function shareBillPDF(bookingId, mobile) {
       format: 'a4'
     });
 
-    const bizName = appSettings.businessName || "Shiv Shakti Bartan Kiraya";
+    const bizName = appSettings.businessName || "UtsavRentals";
     const ownerName = appSettings.ownerName || "";
     const phone = appSettings.phone || "";
 
@@ -1864,7 +1864,7 @@ async function saveSettings() {
 
   // Update header business name live
   const nameEl = document.getElementById('appBusinessName');
-  if (nameEl) nameEl.textContent = fields.businessName || 'Shiv Shakti Bartan Kiraya';
+  if (nameEl) nameEl.textContent = fields.businessName || 'UtsavRentals';
 
   showToast('✅ Settings saved!');
 }
@@ -2055,7 +2055,7 @@ async function startApp() {
       setTimeout(hideSplash, 3000); 
     }
 
-    console.log('✅ Bartan Kiraya App v4 started!');
+    console.log('✅ UtsavRentals v4 started!');
   } catch (err) {
     console.error('❌ App start failed:', err);
     showToast('❌ App failed to start!');
@@ -2150,7 +2150,7 @@ async function shareBookingWhatsApp(bookingId, type) {
   let phone = mobile.replace(/\D/g, '');
   if (phone.length === 10) phone = '91' + phone;
 
-  const msg = `Namaste ${customerName} Ji,\n\nYeh aapki booking (${receiptNo}) ka receipt detail hai.\n\nTotal Bill: ₹${totalAmount}\nPending Amount: ₹${pendingAmount}\n\nDhanyawad,\nShri Shivshakti Ghanavar Teli Samaj Dharmshala`;
+  const msg = `Namaste ${customerName} Ji,\n\nYeh aapki booking (${receiptNo}) ka receipt detail hai.\n\nTotal Bill: ₹${totalAmount}\nPending Amount: ₹${pendingAmount}\n\nDhanyawad,\nUtsavRentals`;
   
   const encodedMsg = encodeURIComponent(msg);
   const waUrl = `https://wa.me/${phone}?text=${encodedMsg}`;

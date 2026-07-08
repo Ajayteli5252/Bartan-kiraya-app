@@ -27,7 +27,7 @@ var E = {
 function getBizName() {
   return (window.appSettings && window.appSettings.businessName)
     ? window.appSettings.businessName
-    : 'Shiv Shakti Bartan Kiraya';
+    : 'UtsavRentals';
 }
 
 function getWaFooter() {
@@ -146,7 +146,7 @@ function sendWhatsAppReminder(mobile, customerName, returnDate) {
   if (!isValidDate) {
     // --- CASE 1: No date — General reminder from customer page ---
     message =
-      E.bell + ' *Bartan Kiraya Reminder*\n' +
+      E.bell + ' *UtsavRentals Reminder*\n' +
       E.line + '\n\n' +
       E.pray + ' Hello *' + customerName + ' ji!*\n\n' +
       'This is a reminder from *' + bizName + '*\n\n' +
