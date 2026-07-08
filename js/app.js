@@ -36,11 +36,25 @@ function handleFabClick() {
   }
 }
 
-function navigateTo(page) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+function navigateTo(page, direction = null) {
+  const tabs = ['dashboard', 'bookings', 'inventory', 'sarai', 'customers', 'report'];
+  
+  if (!direction && tabs.includes(currentPage) && tabs.includes(page)) {
+    const oldIdx = tabs.indexOf(currentPage);
+    const newIdx = tabs.indexOf(page);
+    direction = newIdx > oldIdx ? 'right' : 'left';
+  }
+
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active', 'slide-left', 'slide-right');
+  });
 
   const target = document.getElementById(`page-${page}`);
-  if (target) target.classList.add('active');
+  if (target) {
+    target.classList.add('active');
+    if (direction === 'right') target.classList.add('slide-right');
+    else if (direction === 'left') target.classList.add('slide-left');
+  }
 
   const config = PAGE_CONFIG[page];
   if (config) {
@@ -2164,25 +2178,27 @@ document.addEventListener('touchend', e => {
 }, { passive: true });
 
 function handleSwipe(e) {
-  if (e.target.closest('.table-responsive') || e.target.closest('[style*=" overflow-x\]')) return;
- if (e.target.closest('.modal-sheet') || e.target.closest('.modal-content')) return;
+  if (e.target.closest('.table-responsive') || e.target.closest('[style*="overflow-x"]')) return;
+  if (e.target.closest('.modal-sheet') || e.target.closest('.modal-content') || e.target.closest('.modal-overlay')) return;
 
- const tabs = ['dashboard', 'bookings', 'inventory', 'sarai', 'customers', 'report'];
- const currentIndex = tabs.indexOf(currentPage);
- if (currentIndex === -1) return;
+  const tabs = ['dashboard', 'bookings', 'inventory', 'sarai', 'customers', 'report'];
+  const currentIndex = tabs.indexOf(currentPage);
+  if (currentIndex === -1) return;
 
- const diffX = touchstartX - touchendX;
- const diffY = touchstartY - touchendY;
+  const diffX = touchstartX - touchendX;
+  const diffY = touchstartY - touchendY;
 
- if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(diffX) > Math.abs(diffY)) {
- if (diffX > 0) {
- if (currentIndex < tabs.length - 1) {
- navigateTo(tabs[currentIndex + 1]);
- }
- } else {
- if (currentIndex > 0) {
- navigateTo(tabs[currentIndex - 1]);
- }
- }
- }
+  if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(diffX) > Math.abs(diffY)) {
+    if (diffX > 0) {
+      // Swiped left -> Go to next tab
+      if (currentIndex < tabs.length - 1) {
+        navigateTo(tabs[currentIndex + 1], 'right');
+      }
+    } else {
+      // Swiped right -> Go to previous tab
+      if (currentIndex > 0) {
+        navigateTo(tabs[currentIndex - 1], 'left');
+      }
+    }
+  }
 }

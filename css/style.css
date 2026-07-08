@@ -188,6 +188,20 @@ body {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.page.slide-right { animation: slideInRight 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.page.slide-left { animation: slideInLeft 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+
+
 /* ============================================
    STAGGER ANIMATIONS
    ============================================ */
