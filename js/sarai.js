@@ -340,7 +340,7 @@ async function openSaraiDetail(id) {
     </div>
     <div class="btn-row" style="margin-top:10px;">
       <button class="btn btn-outline" onclick="navigateTo('sarai')">← Back to List</button>
-      ${booking.status === 'active' ? `<button class="btn btn-danger btn-sm" onclick="cancelSaraiBooking(${id})" style="width:auto;flex:0;">Cancel</button>` : ''}
+      ${booking.status === 'active' ? `<button class="btn btn-danger" onclick="cancelSaraiBooking(${id})">Cancel</button>` : ''}
     </div>
     <div style="height:16px;"></div>
   `;

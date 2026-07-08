@@ -178,6 +178,7 @@ body {
 .page {
   display: none;
   padding: 14px;
+  padding-bottom: 90px; /* Space for FAB / Bottom Nav */
   animation: pageSlideUp 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 .page.active { display: block; }

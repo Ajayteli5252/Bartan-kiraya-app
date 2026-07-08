@@ -15,7 +15,7 @@ const PAGE_CONFIG = {
   'customer-detail': { title: '👤 Customer Detail', nav: null,             fab: false },
   'report':          { title: '📊 Reports',          nav: 'nav-report',     fab: false },
   'settings':        { title: '⚙️ Settings',         nav: null,             fab: false },
-  'sarai':           { title: '🏰 Sarai Bookings',   nav: 'nav-sarai',      fab: false },
+  'sarai':           { title: '🏰 Sarai Bookings',   nav: 'nav-sarai',      fab: true  },
   'new-sarai-booking': { title: '➕ Book Sarai',     nav: null,             fab: false },
   'sarai-detail':    { title: '📄 Sarai Detail',    nav: null,             fab: false },
 };
@@ -26,6 +26,16 @@ let appSettings  = {};
 // ============================================
 // Navigate Between Pages
 // ============================================
+function handleFabClick() {
+  if (currentPage === 'sarai') {
+    if (typeof startNewSaraiBooking === 'function') {
+      startNewSaraiBooking();
+    }
+  } else {
+    navigateTo('new-booking');
+  }
+}
+
 function navigateTo(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
 
@@ -475,7 +485,7 @@ async function openBookingDetail(bookingId) {
     </div>
     <div class="btn-row" style="margin-top:10px;">
       <button class="btn btn-outline" onclick="navigateTo('bookings')">← Back</button>
-      <button class="btn btn-danger btn-sm" onclick="confirmDeleteBooking(${bookingId})" style="width:auto;flex:0;">🗑️ Delete</button>
+      <button class="btn btn-danger" onclick="confirmDeleteBooking(${bookingId})">🗑️ Delete</button>
     </div>
     <div style="height:16px;"></div>
   `;
@@ -1785,11 +1795,37 @@ async function openCustomerDetail(customerId) {
     <div class="btn-row" style="margin-top:10px;margin-bottom:16px;">
       ${customer.mobile ? `<button class="btn btn-whatsapp" onclick="sendWhatsAppReminder('${customer.mobile}', '${customer.name.replace(/'/g,"\\'")}', '')">📲 WhatsApp</button>` : ''}
       <button class="btn btn-outline" onclick="navigateTo('customers')">← Back</button>
+      <button class="btn btn-danger" onclick="deleteCustomer(${customerId})">🗑️ Delete</button>
     </div>
     <div style="height:16px;"></div>
   `;
 
   navigateTo('customer-detail');
+}
+
+async function deleteCustomer(customerId) {
+  if (!confirm("Are you sure you want to delete this customer?")) return;
+  
+  const customer = await BartanDB.get(BartanDB.STORES.CUSTOMERS, customerId);
+  if (!customer) return;
+
+  const bBookings = await BartanDB.getByIndex(BartanDB.STORES.BOOKINGS, 'customerId', customerId) || [];
+  const sBookings = await BartanDB.getByIndex(BartanDB.STORES.SARAI_BOOKINGS, 'customerId', customerId) || [];
+  
+  const activeB = bBookings.some(b => b.status === 'active');
+  const activeS = sBookings.some(b => b.status === 'active');
+  const pendingB = bBookings.some(b => (b.pendingAmount || 0) > 0);
+  const pendingS = sBookings.some(b => (b.pendingAmount || 0) > 0);
+
+  if (activeB || activeS || pendingB || pendingS) {
+    showToast('⚠️ Cannot delete! Customer has active bookings or pending payments.');
+    return;
+  }
+
+  await BartanDB.delete(BartanDB.STORES.CUSTOMERS, customerId);
+  showToast('✅ Customer deleted successfully');
+  await loadCustomersData();
+  navigateTo('customers');
 }
 
 // ============================================
@@ -2119,4 +2155,47 @@ async function shareBookingWhatsApp(bookingId, type) {
   const waUrl = `https://wa.me/${phone}?text=${encodedMsg}`;
   
   window.open(waUrl, '_blank');
+}
+// ============================================
+// SWIPE NAVIGATION
+// ============================================
+let touchstartX = 0;
+let touchstartY = 0;
+let touchendX = 0;
+let touchendY = 0;
+const SWIPE_THRESHOLD = 80;
+
+document.addEventListener('touchstart', e => {
+  touchstartX = e.changedTouches[0].screenX;
+  touchstartY = e.changedTouches[0].screenY;
+}, { passive: true });
+
+document.addEventListener('touchend', e => {
+  touchendX = e.changedTouches[0].screenX;
+  touchendY = e.changedTouches[0].screenY;
+  handleSwipe(e);
+}, { passive: true });
+
+function handleSwipe(e) {
+  if (e.target.closest('.table-responsive') || e.target.closest('[style*=" overflow-x\]')) return;
+ if (e.target.closest('.modal-sheet') || e.target.closest('.modal-content')) return;
+
+ const tabs = ['dashboard', 'bookings', 'inventory', 'sarai', 'customers', 'report'];
+ const currentIndex = tabs.indexOf(currentPage);
+ if (currentIndex === -1) return;
+
+ const diffX = touchstartX - touchendX;
+ const diffY = touchstartY - touchendY;
+
+ if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(diffX) > Math.abs(diffY)) {
+ if (diffX > 0) {
+ if (currentIndex < tabs.length - 1) {
+ navigateTo(tabs[currentIndex + 1]);
+ }
+ } else {
+ if (currentIndex > 0) {
+ navigateTo(tabs[currentIndex - 1]);
+ }
+ }
+ }
 }

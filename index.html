@@ -207,10 +207,6 @@
   <!-- 1. DASHBOARD PAGE -->
   <div class="page active" id="page-dashboard">
 
-    <div style="margin-bottom: 14px;">
-      <button class="btn btn-primary" onclick="navigateTo('new-booking')" style="width: 100%; font-size: 1.1rem; padding: 14px; box-shadow: var(--shadow-lg);">➕ Create New Booking</button>
-    </div>
-
     <!-- Stats Grid (6 cards) -->
     <div class="stats-grid-3">
       <div class="stat-card">
@@ -692,7 +688,7 @@
   </nav>
 
   <!-- ===== FAB Button ===== -->
-  <button class="fab" id="fabBtn" onclick="navigateTo('new-booking')" title="New Booking">＋</button>
+  <button class="fab" id="fabBtn" onclick="handleFabClick()" title="New Booking">➕</button>
 
   <!-- ===== TOAST ===== -->
   <div class="toast" id="toast"></div>
