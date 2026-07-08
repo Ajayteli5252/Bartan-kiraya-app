@@ -321,8 +321,8 @@ async function openSaraiDetail(id) {
       </div>
       <div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--border);margin-top:4px;">
         <span style="font-size:0.9rem;font-weight:700;">Pending Balance</span>
-        <span style="font-weight:800;color:${booking.pendingAmount > 0 ? 'var(--danger)' : 'var(--success)'};">
-          ${booking.pendingAmount > 0 ? formatCurrency(booking.pendingAmount) : '✅ Fully Paid'}
+        <span style="font-weight:800;color:${booking.status === 'cancelled' ? 'var(--text-hint)' : (booking.pendingAmount > 0 ? 'var(--danger)' : 'var(--success)')};">
+          ${booking.status === 'cancelled' ? 'Cancelled' : (booking.pendingAmount > 0 ? formatCurrency(booking.pendingAmount) : '✅ Fully Paid')}
         </span>
       </div>
       ${paymentRows ? `<div class="divider"></div><div class="card-title">Payment History</div>${paymentRows}` : ''}
@@ -362,6 +362,7 @@ async function cancelSaraiBooking(id) {
   if (!confirm("Cancel this booking? This cannot be undone.")) return;
   const booking = await BartanDB.get(BartanDB.STORES.SARAI_BOOKINGS, id);
   booking.status = 'cancelled';
+  booking.totalAmount = 0; // Clear amount for cancelled bookings
   booking.pendingAmount = 0; // Clear pending amount if cancelled
   await BartanDB.put(BartanDB.STORES.SARAI_BOOKINGS, booking);
   showToast('✅ Sarai Booking Cancelled');

@@ -39,6 +39,7 @@ async function loadReport() {
   });
 
   const filteredSarai = saraiBookingsAll.filter(b => {
+    if (b.status === 'cancelled') return false;
     const d = new Date(b.bookingDate);
     if (d.getFullYear() !== year) return false;
     if (month !== '' && d.getMonth() !== parseInt(month)) return false;
