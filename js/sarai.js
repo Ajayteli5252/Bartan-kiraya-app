@@ -544,34 +544,21 @@ async function shareSaraiReceipt(id) {
     doc.text("Dhanyawad! Booking karne ke liye.", 74, 160, { align: "center" });
     
     const pdfBlob = doc.output('blob');
-    const file = new File([pdfBlob], `Sarai_Receipt_${booking.receiptNo}.pdf`, { type: 'application/pdf' });
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Sarai_Receipt_${booking.receiptNo}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
     
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({
-          title: 'Sarai Booking Receipt',
-          text: 'Please find attached your Sarai Booking Receipt.',
-          files: [file]
-        });
-        showToast('✅ PDF Shared Successfully!');
-      } catch (err) {
-        console.error('Share cancelled or failed', err);
-      }
-    } else {
-      const url = URL.createObjectURL(pdfBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Sarai_Receipt_${booking.receiptNo}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      showToast('⬇️ PDF Downloaded. Please attach it manually in WhatsApp.');
-      
-      if (mobile) {
-        setTimeout(() => {
-          window.open(`https://wa.me/91${mobile}?text=Dhanyawad ${booking.customerName}! Booking karne ke liye. Please check the downloaded PDF receipt for your Sarai booking.`, '_blank');
-        }, 1000);
-      }
+    showToast('📥 PDF Downloaded. Please attach it manually in WhatsApp.');
+    
+    if (mobile) {
+      let phone = mobile.replace(/\D/g, '');
+      if (phone.length === 10) phone = '91' + phone;
+      setTimeout(() => {
+        window.open(`https://wa.me/${phone}?text=Dhanyawad ${booking.customerName}! Booking karne ke liye. Please check the downloaded PDF receipt for your Sarai booking.`, '_blank');
+      }, 1000);
     }
   } catch(e) {
     console.error(e);

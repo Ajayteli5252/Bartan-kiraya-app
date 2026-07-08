@@ -1034,34 +1034,21 @@ async function shareBillPDF(bookingId, mobile) {
     doc.text("Dhanyawad! Booking karne ke liye.", 105, 275, { align: "center" });
     
     const pdfBlob = doc.output('blob');
-    const file = new File([pdfBlob], `Bartan_Receipt_${booking.receiptNo}.pdf`, { type: 'application/pdf' });
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Bartan_Receipt_${booking.receiptNo}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
     
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({
-          title: 'Bartan Booking Receipt',
-          text: 'Please find attached your Bartan Booking Receipt.',
-          files: [file]
-        });
-        showToast('✅ PDF Shared Successfully!');
-      } catch (err) {
-        console.error('Share cancelled or failed', err);
-      }
-    } else {
-      const url = URL.createObjectURL(pdfBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Bartan_Receipt_${booking.receiptNo}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      showToast('⬇️ PDF Downloaded. Please attach it manually in WhatsApp.');
-      
-      if (mobile) {
-        setTimeout(() => {
-          window.open(`https://wa.me/91${mobile}?text=Dhanyawad ${custName}! Booking karne ke liye. Please check the downloaded PDF receipt for your Bartan booking.`, '_blank');
-        }, 1000);
-      }
+    showToast('📥 PDF Downloaded. Please attach it manually in WhatsApp.');
+    
+    if (mobile) {
+      let phone = mobile.replace(/\D/g, '');
+      if (phone.length === 10) phone = '91' + phone;
+      setTimeout(() => {
+        window.open(`https://wa.me/${phone}?text=Dhanyawad ${custName}! Booking karne ke liye. Please check the downloaded PDF receipt for your Bartan booking.`, '_blank');
+      }, 1000);
     }
   } catch(e) {
     console.error(e);
